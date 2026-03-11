@@ -65,6 +65,7 @@ sudo apt install -y /tmp/switchhosts.deb
 # ── 子脚本 ────────────────────────────────────────────────
 log_section "执行子脚本"
 bash "$SCRIPT_DIR/scripts/kernel.sh"
+bash "$SCRIPT_DIR/scripts/nvidia.sh"
 bash "$SCRIPT_DIR/scripts/brew.sh"
 bash "$SCRIPT_DIR/scripts/zsh.sh"
 bash "$SCRIPT_DIR/scripts/fcitx.sh"
