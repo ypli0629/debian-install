@@ -50,12 +50,16 @@ sudo apt install -y /tmp/docker-desktop-amd64.deb
 
 # ── Clash Verge Rev ──────────────────────────────────────
 log_section "Clash Verge Rev"
-wget -O /tmp/clash-verge.deb https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.2.3/Clash.Verge_2.2.3_amd64.deb
+CLASH_VERGE_URL=$(curl -fsSL https://api.github.com/repos/clash-verge-rev/clash-verge-rev/releases/latest \
+    | grep -oP '"browser_download_url":\s*"\K[^"]+amd64\.deb')
+wget -O /tmp/clash-verge.deb "$CLASH_VERGE_URL"
 sudo apt install -y /tmp/clash-verge.deb
 
 # ── SwitchHosts ──────────────────────────────────────────
 log_section "SwitchHosts"
-wget -O /tmp/switchhosts.deb https://github.com/oldj/SwitchHosts/releases/download/v4.2.0-beta/SwitchHosts_linux_amd64_4.2.0.6105.deb
+SWITCHHOSTS_URL=$(curl -fsSL https://api.github.com/repos/oldj/SwitchHosts/releases/latest \
+    | grep -oP '"browser_download_url":\s*"\K[^"]+linux_amd64[^"]+\.deb')
+wget -O /tmp/switchhosts.deb "$SWITCHHOSTS_URL"
 sudo apt install -y /tmp/switchhosts.deb
 
 # ── 子脚本 ────────────────────────────────────────────────
