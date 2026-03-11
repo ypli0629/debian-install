@@ -2,6 +2,9 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 
+log_section "安装依赖"
+sudo apt install -y flameshot
+
 log_section "GNOME 工作区快捷键"
 for i in $(seq 1 9); do
     gsettings set org.gnome.shell.keybindings switch-to-application-${i} '[]'

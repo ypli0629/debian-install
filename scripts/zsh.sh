@@ -16,6 +16,16 @@ git_clone_or_skip https://github.com/zsh-users/zsh-autosuggestions \
 git_clone_or_skip https://github.com/zsh-users/zsh-syntax-highlighting \
     "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
 
+# 将插件加入 plugins=() 列表（幂等）
+for plugin in zsh-autosuggestions zsh-syntax-highlighting; do
+    if grep -qE "^plugins=\([^)]*${plugin}" ~/.zshrc; then
+        log_info "插件已启用：$plugin，跳过"
+    else
+        sed -i "s/^plugins=(\(.*\))/plugins=(\1 ${plugin})/" ~/.zshrc
+        log_success "已启用插件：$plugin"
+    fi
+done
+
 log_section "zshrc 配置"
 append_zshrc_once "# >>> debian13-install >>>" "$(cat <<'EOF'
 # >>> debian13-install >>>

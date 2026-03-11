@@ -6,12 +6,12 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 log_section "启用 contrib / non-free / non-free-firmware 仓库"
 
 SOURCES_FILE="/etc/apt/sources.list"
-if ! grep -q "non-free-firmware" "$SOURCES_FILE"; then
-    sudo sed -i 's/^\(deb .\+trixie\( main\)\?\)$/\1 contrib non-free non-free-firmware/' "$SOURCES_FILE"
-    sudo sed -i 's/^\(deb .\+trixie-security\( main\)\?\)$/\1 contrib non-free non-free-firmware/' "$SOURCES_FILE"
-    log_success "已添加 contrib non-free non-free-firmware"
-else
+# 逐行检查：active 的 trixie 行中缺少 non-free-firmware 的都补全
+if grep -qE '^deb[[:space:]].*trixie.*non-free-firmware' "$SOURCES_FILE"; then
     log_info "non-free 仓库已启用，跳过"
+else
+    sudo sed -i -E '/^deb[[:space:]].*trixie/{/non-free-firmware/b; s/$/ contrib non-free non-free-firmware/}' "$SOURCES_FILE"
+    log_success "已为所有 trixie 源行添加 contrib non-free non-free-firmware"
 fi
 
 sudo apt update
