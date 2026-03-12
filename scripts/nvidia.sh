@@ -48,7 +48,7 @@ done
 # ── 检测 GPU ──────────────────────────────────────────────
 log_section "检测 NVIDIA GPU"
 sudo apt install -y nvidia-detect
-DETECT_OUT=$(nvidia-detect 2>&1)
+DETECT_OUT=$(nvidia-detect 2>&1) || true   # nvidia-detect 找到 GPU 时退出码非 0，须屏蔽
 log_info "$DETECT_OUT"
 
 # ── 安装驱动 ──────────────────────────────────────────────

@@ -7,7 +7,7 @@ log_section "Homebrew"
 if command -v brew &>/dev/null; then
     log_info "Homebrew 已安装，跳过"
 else
-    /bin/bash -c "$(gh_curl https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    NONINTERACTIVE=1 /bin/bash -c "$(gh_curl https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
 if [[ ! -f /etc/environment.d/brew.conf ]]; then

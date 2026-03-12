@@ -10,6 +10,17 @@ else
     sh -c "$(gh_curl https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 fi
 
+# --unattended 不会自动 chsh，需手动切换默认 shell
+ZSH_BIN="$(command -v zsh 2>/dev/null || echo "")"
+if [[ -n "$ZSH_BIN" && "$SHELL" != "$ZSH_BIN" ]]; then
+    # 确保 zsh 在 /etc/shells 中
+    grep -qF "$ZSH_BIN" /etc/shells || echo "$ZSH_BIN" | sudo tee -a /etc/shells > /dev/null
+    sudo chsh -s "$ZSH_BIN" "$USER"
+    log_success "默认 Shell 已切换为 $ZSH_BIN"
+else
+    log_info "默认 Shell 已是 zsh，跳过"
+fi
+
 log_section "zsh 插件"
 git_clone_or_skip https://github.com/zsh-users/zsh-autosuggestions \
     "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
