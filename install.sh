@@ -11,7 +11,10 @@ check_sudo
 log_section "系统更新"
 sudo apt update
 sudo apt upgrade -y && sudo apt dist-upgrade -y
-sudo apt install -y zsh git curl wget ca-certificates flatpak gnome-software-plugin-flatpak
+sudo apt install -y zsh git curl wget ca-certificates flatpak gnome-software-plugin-flatpak \
+    build-essential cmake pkg-config \
+    fonts-noto-cjk fonts-noto-cjk-extra \
+    timeshift
 
 # ── 目录 ─────────────────────────────────────────────────
 log_section "创建目录"

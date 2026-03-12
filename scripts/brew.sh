@@ -26,6 +26,6 @@ fi
 
 log_section "Homebrew 软件包"
 brew install --cask font-sauce-code-pro-nerd-font
-brew install gcc go rustup node pnpm yarn neovim bear
+brew install gcc go rustup node pnpm yarn neovim bear fzf
 
 log_success "brew 完成"

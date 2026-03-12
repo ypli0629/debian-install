@@ -53,6 +53,9 @@ alias poff="unset http_proxy; unset https_proxy; unset all_proxy"
 
 export PATH=~/.local/bin:~/go/bin:$PATH
 ___MY_VMOPTIONS_SHELL_FILE="${HOME}/.jetbrains.vmoptions.sh"; if [ -f "${___MY_VMOPTIONS_SHELL_FILE}" ]; then . "${___MY_VMOPTIONS_SHELL_FILE}"; fi
+
+# fzf shell 集成：Ctrl+R 历史搜索 / Ctrl+T 文件搜索 / Alt+C 目录跳转
+command -v fzf &>/dev/null && eval "$(fzf --zsh)"
 # <<< debian13-install <<<
 EOF
 )"
