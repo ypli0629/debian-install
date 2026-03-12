@@ -13,7 +13,7 @@ git_clone_or_skip https://github.com/vinceliuice/MacTahoe-gtk-theme.git "$THEMES
 if ls -d "$HOME/.local/share/themes/MacTahoe"* &>/dev/null 2>&1; then
     log_info "MacTahoe GTK 主题已安装，跳过"
 else
-    bash "$THEMES_DIR/MacTahoe-gtk-theme/install.sh" -l -b --silent-mode
+    sudo bash "$THEMES_DIR/MacTahoe-gtk-theme/install.sh" -l -b --silent-mode
     log_success "MacTahoe GTK 主题安装完成"
 fi
 
