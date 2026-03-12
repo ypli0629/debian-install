@@ -13,8 +13,7 @@ sudo apt update
 sudo apt upgrade -y && sudo apt dist-upgrade -y
 sudo apt install -y zsh git curl wget ca-certificates flatpak gnome-software-plugin-flatpak \
     build-essential cmake pkg-config \
-    fonts-noto-cjk fonts-noto-cjk-extra \
-    timeshift
+    fonts-noto-cjk fonts-noto-cjk-extra
 
 # ── 目录 ─────────────────────────────────────────────────
 log_section "创建目录"
