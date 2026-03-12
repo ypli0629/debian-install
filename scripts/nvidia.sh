@@ -5,13 +5,28 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 # ── 启用 non-free 仓库 ────────────────────────────────────
 log_section "启用 contrib / non-free / non-free-firmware 仓库"
 
-SOURCES_FILE="/etc/apt/sources.list"
-# 逐行检查：active 的 trixie 行中缺少 non-free-firmware 的都补全
-if grep -qE '^deb[[:space:]].*trixie.*non-free-firmware' "$SOURCES_FILE"; then
+# 同时检查 sources.list 和 sources.list.d/ 下的所有文件（含 DEB822 格式的 .sources）
+_nonfree_enabled() {
+    grep -qE '^deb[[:space:]].*trixie.*non-free-firmware' /etc/apt/sources.list 2>/dev/null && return 0
+    grep -rlE 'trixie.*non-free-firmware' /etc/apt/sources.list.d/ 2>/dev/null | grep -q . && return 0
+    # DEB822 格式：Components 行包含 non-free-firmware
+    grep -rlE '^Components:.*non-free-firmware' /etc/apt/sources.list.d/ 2>/dev/null | grep -q . && return 0
+    return 1
+}
+
+if _nonfree_enabled; then
     log_info "non-free 仓库已启用，跳过"
 else
-    sudo sed -i -E '/^deb[[:space:]].*trixie/{/non-free-firmware/b; s/$/ contrib non-free non-free-firmware/}' "$SOURCES_FILE"
-    log_success "已为所有 trixie 源行添加 contrib non-free non-free-firmware"
+    SOURCES_FILE="/etc/apt/sources.list"
+    if [[ -s "$SOURCES_FILE" ]] && grep -qE '^deb[[:space:]].*trixie' "$SOURCES_FILE"; then
+        sudo sed -i -E '/^deb[[:space:]].*trixie/{/non-free-firmware/b; s/$/ contrib non-free non-free-firmware/}' "$SOURCES_FILE"
+        log_success "已为 sources.list 中的 trixie 源行添加 contrib non-free non-free-firmware"
+    else
+        log_info "sources.list 中未找到 trixie 行，尝试写入 sources.list.d/nonfree.list"
+        echo "deb http://deb.debian.org/debian trixie main contrib non-free non-free-firmware" \
+            | sudo tee /etc/apt/sources.list.d/nonfree.list > /dev/null
+        log_success "已写入 /etc/apt/sources.list.d/nonfree.list"
+    fi
 fi
 
 sudo apt update
@@ -43,7 +58,8 @@ sudo apt install -y nvidia-kernel-dkms nvidia-driver
 # ── 为每个 6.6.x 内核显式触发 DKMS 编译 ──────────────────
 log_section "为 6.6 内核编译 NVIDIA DKMS 模块"
 
-NVIDIA_VER=$(dkms status | grep -oP 'nvidia/\K[^,]+' | head -1)
+# 兼容旧格式 "nvidia/xxx, ..." 和新格式 "nvidia/xxx: ..."
+NVIDIA_VER=$(dkms status | grep -oP 'nvidia/\K[\d.]+' | head -1)
 [[ -z "$NVIDIA_VER" ]] && log_error "无法获取 nvidia DKMS 版本" fatal
 log_info "NVIDIA DKMS 版本：$NVIDIA_VER"
 

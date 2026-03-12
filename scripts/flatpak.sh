@@ -22,9 +22,8 @@ packages=(
     "net.xmind.XMind"
 )
 
-for package in "${packages[@]}"; do
-    log_info "安装：$package"
-    flatpak install flathub "$package" -y --noninteractive || log_error "跳过失败的包：$package"
-done
+log_info "批量安装 ${#packages[@]} 个包..."
+flatpak install flathub -y --noninteractive "${packages[@]}" \
+    || log_error "部分 Flatpak 包安装失败，请手动重试"
 
 log_success "Flatpak 安装完成"

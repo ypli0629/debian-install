@@ -7,7 +7,7 @@ log_section "oh-my-zsh"
 if [[ -d "$HOME/.oh-my-zsh" ]]; then
     log_info "oh-my-zsh 已安装，跳过"
 else
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    sh -c "$(gh_curl https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 fi
 
 log_section "zsh 插件"
@@ -16,13 +16,19 @@ git_clone_or_skip https://github.com/zsh-users/zsh-autosuggestions \
 git_clone_or_skip https://github.com/zsh-users/zsh-syntax-highlighting \
     "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
 
-# 将插件加入 plugins=() 列表（幂等）
+# 将插件加入 plugins=() 列表（幂等，兼容单行和多行写法）
 for plugin in zsh-autosuggestions zsh-syntax-highlighting; do
-    if grep -qE "^plugins=\([^)]*${plugin}" ~/.zshrc; then
+    # 用 grep -F 匹配完整插件名，避免子字符串误判
+    if grep -qF "$plugin" ~/.zshrc 2>/dev/null; then
         log_info "插件已启用：$plugin，跳过"
     else
-        sed -i "s/^plugins=(\(.*\))/plugins=(\1 ${plugin})/" ~/.zshrc
-        log_success "已启用插件：$plugin"
+        # 仅替换单行 plugins=(...)；若 .zshrc 是多行格式，提示用户手动处理
+        if grep -qE "^plugins=\(.*\)[[:space:]]*$" ~/.zshrc 2>/dev/null; then
+            sed -i "s/^plugins=(\(.*\))/plugins=(\1 ${plugin})/" ~/.zshrc
+            log_success "已启用插件：$plugin"
+        else
+            log_info "plugins=() 可能是多行格式，请手动将 ${plugin} 加入 ~/.zshrc 的 plugins 列表"
+        fi
     fi
 done
 
