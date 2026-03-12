@@ -19,6 +19,14 @@ check_sudo() {
     if ! sudo -v 2>/dev/null; then
         log_error "需要 sudo 权限" fatal
     fi
+    # 确保 curl/wget 可用（Debian 最小安装不自带）
+    local _missing=()
+    command -v curl &>/dev/null || _missing+=(curl)
+    command -v wget &>/dev/null || _missing+=(wget)
+    if [[ ${#_missing[@]} -gt 0 ]]; then
+        log_info "安装基础工具：${_missing[*]}"
+        sudo apt-get install -y "${_missing[@]}" -qq
+    fi
     # 保持 sudo 会话不过期
     ( while true; do sudo -v; sleep 50; done ) &
     SUDO_KEEP_ALIVE_PID=$!
