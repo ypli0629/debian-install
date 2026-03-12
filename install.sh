@@ -13,7 +13,8 @@ sudo apt update
 sudo apt upgrade -y && sudo apt dist-upgrade -y
 sudo apt install -y zsh git curl wget ca-certificates flatpak gnome-software-plugin-flatpak \
     build-essential cmake pkg-config \
-    fonts-noto-cjk fonts-noto-cjk-extra
+    fonts-noto-cjk fonts-noto-cjk-extra \
+    default-jdk
 
 # ── 目录 ─────────────────────────────────────────────────
 log_section "创建目录"
@@ -108,6 +109,33 @@ else
         fi
     else
         record_failure "SwitchHosts" "获取 GitHub Release 链接失败"
+    fi
+fi
+
+# ── JetBrains Toolbox ─────────────────────────────────────
+log_section "JetBrains Toolbox"
+TOOLBOX_BIN="$HOME/.local/bin/jetbrains-toolbox"
+if [[ -x "$TOOLBOX_BIN" ]]; then
+    log_info "JetBrains Toolbox 已安装，跳过"
+else
+    TOOLBOX_URL=$(curl -fsSL \
+        "https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release" \
+        | grep -oP 'https://download\.jetbrains\.com/toolbox/jetbrains-toolbox-[^"]+\.tar\.gz' \
+        | head -1) || TOOLBOX_URL=""
+    if [[ -n "$TOOLBOX_URL" ]]; then
+        if wget --timeout=60 -q -O /tmp/jetbrains-toolbox.tar.gz "$TOOLBOX_URL"; then
+            mkdir -p "$HOME/.local/bin"
+            tar -xzf /tmp/jetbrains-toolbox.tar.gz -C /tmp/
+            find /tmp -maxdepth 2 -name "jetbrains-toolbox" -type f \
+                | head -1 | xargs -I{} mv {} "$TOOLBOX_BIN"
+            chmod +x "$TOOLBOX_BIN"
+            rm -f /tmp/jetbrains-toolbox.tar.gz
+            log_success "JetBrains Toolbox 已安装至 $TOOLBOX_BIN，首次运行请在桌面环境执行"
+        else
+            record_failure "JetBrains Toolbox" "下载失败"
+        fi
+    else
+        record_failure "JetBrains Toolbox" "获取下载链接失败"
     fi
 fi
 

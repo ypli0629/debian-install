@@ -6,6 +6,7 @@ log_section "Flatpak 应用"
 
 packages=(
     "com.calibre_ebook.calibre"
+    "io.dbeaver.DBeaverCommunity"
     "com.discordapp.Discord"
     "com.getpostman.Postman"
     "com.obsproject.Studio"
