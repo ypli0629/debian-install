@@ -6,7 +6,15 @@ check_sudo
 
 GRUB_CFG="/boot/grub/grub.cfg"
 GRUB_DEFAULT_FILE="/etc/default/grub"
-MAINLINE_BASE="https://kernel.ubuntu.com/mainline"
+
+# ── 探测 kernel.ubuntu.com 可用协议 ───────────────────────
+# 部分 Debian 环境下 CA 证书不信任 Canonical，TLS 握手失败，回退 HTTP
+if curl -fsSL --connect-timeout 10 "https://kernel.ubuntu.com/mainline/" -o /dev/null 2>/dev/null; then
+    MAINLINE_BASE="https://kernel.ubuntu.com/mainline"
+else
+    log_info "HTTPS 连接 kernel.ubuntu.com 失败，回退使用 HTTP"
+    MAINLINE_BASE="http://kernel.ubuntu.com/mainline"
+fi
 
 # ── 查找最新 6.6.x mainline 版本 ─────────────────────────
 log_section "查找 Ubuntu Mainline 6.6 最新版本"
