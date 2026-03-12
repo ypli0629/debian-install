@@ -2,6 +2,8 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 
+check_sudo
+
 log_section "oh-my-zsh"
 
 if [[ -d "$HOME/.oh-my-zsh" ]]; then

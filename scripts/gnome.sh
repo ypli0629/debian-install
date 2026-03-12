@@ -2,6 +2,8 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 
+check_sudo
+
 log_section "安装依赖"
 sudo apt install -y flameshot gnome-tweaks gnome-shell-extension-manager gnome-shell-extensions
 

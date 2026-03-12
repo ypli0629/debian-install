@@ -2,6 +2,8 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 
+check_sudo
+
 # ── 启用 non-free 仓库 ────────────────────────────────────
 log_section "启用 contrib / non-free / non-free-firmware 仓库"
 

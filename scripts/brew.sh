@@ -2,6 +2,8 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 
+check_sudo
+
 log_section "Homebrew"
 
 if command -v brew &>/dev/null; then

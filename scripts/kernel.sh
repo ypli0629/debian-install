@@ -2,6 +2,8 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 
+check_sudo
+
 GRUB_CFG="/boot/grub/grub.cfg"
 GRUB_DEFAULT_FILE="/etc/default/grub"
 MAINLINE_BASE="https://kernel.ubuntu.com/mainline"

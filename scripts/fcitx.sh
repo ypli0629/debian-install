@@ -2,6 +2,8 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 
+check_sudo
+
 log_section "fcitx5 安装"
 sudo apt install -y fcitx5 fcitx5-chinese-addons fcitx5-rime librime-plugin-lua
 

@@ -2,6 +2,8 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 
+check_sudo
+
 THEMES_DIR="$HOME/.local/share/themes-src"
 mkdir -p "$THEMES_DIR"
 
