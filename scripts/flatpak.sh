@@ -26,7 +26,8 @@ packages=(
 )
 
 log_info "批量安装 ${#packages[@]} 个包..."
-flatpak install flathub -y --noninteractive "${packages[@]}" \
-    || log_error "部分 Flatpak 包安装失败，请手动重试"
-
-log_success "Flatpak 安装完成"
+if flatpak install flathub -y --noninteractive "${packages[@]}"; then
+    log_success "Flatpak 安装完成"
+else
+    log_error "部分 Flatpak 包安装失败，请手动重试"
+fi

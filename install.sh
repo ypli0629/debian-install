@@ -94,7 +94,7 @@ fi
 
 # ── SwitchHosts ──────────────────────────────────────────
 log_section "SwitchHosts"
-if command -v switchhosts &>/dev/null || dpkg -l switchhosts &>/dev/null 2>&1; then
+if command -v switchhosts &>/dev/null || dpkg-query -W -f='${Status}' switchhosts 2>/dev/null | grep -q "install ok installed"; then
     log_info "SwitchHosts 已安装，跳过"
 else
     SWITCHHOSTS_URL=$(gh_curl "https://api.github.com/repos/oldj/SwitchHosts/releases/latest" \
