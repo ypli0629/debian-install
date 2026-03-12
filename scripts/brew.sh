@@ -26,6 +26,7 @@ fi
 
 log_section "Homebrew 软件包"
 brew install --cask font-sauce-code-pro-nerd-font
-brew install gcc go rustup node pnpm yarn neovim bear fzf mycli
+brew install gcc go rustup node pnpm yarn neovim bear fzf mycli \
+    lazydocker jq mkcert xh
 
 log_success "brew 完成"
