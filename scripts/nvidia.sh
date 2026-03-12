@@ -64,6 +64,11 @@ NVIDIA_VER=$(dkms status | grep -oP 'nvidia/\K[\d.]+' | head -1)
 log_info "NVIDIA DKMS 版本：$NVIDIA_VER"
 
 for KERNEL_VER in "${MAINLINE_KERNELS[@]}"; do
+    # 检查该内核版本的模块是否已编译安装，避免每次重跑都耗时重新编译
+    if dkms status "nvidia/${NVIDIA_VER}" -k "${KERNEL_VER}" 2>/dev/null | grep -q "installed"; then
+        log_info "nvidia/${NVIDIA_VER} @ ${KERNEL_VER} 已安装，跳过编译"
+        continue
+    fi
     log_info "编译 nvidia/${NVIDIA_VER} for ${KERNEL_VER}"
     sudo dkms install "nvidia/${NVIDIA_VER}" -k "${KERNEL_VER}" --force || \
         log_error "DKMS 编译失败：${KERNEL_VER}，请检查日志 /var/lib/dkms/nvidia/${NVIDIA_VER}/build/make.log" fatal

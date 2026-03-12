@@ -5,6 +5,14 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 log_section "安装依赖"
 sudo apt install -y flameshot
 
+# ── 检查 GNOME 桌面环境 ───────────────────────────────────
+# gsettings 依赖 DBUS session，在 TTY/SSH 无桌面环境下会失败
+if ! gsettings list-schemas &>/dev/null 2>&1; then
+    log_info "未检测到 GNOME session（DBUS 不可用），跳过快捷键配置"
+    log_info "请在桌面环境登录后手动重新运行此脚本：bash scripts/gnome.sh"
+    exit 0
+fi
+
 log_section "GNOME 工作区快捷键"
 for i in $(seq 1 9); do
     gsettings set org.gnome.shell.keybindings switch-to-application-${i} '[]'

@@ -14,7 +14,15 @@ log_section "oh-my-rime 配置"
 git_clone_or_skip https://github.com/Mintimate/oh-my-rime "$HOME/.local/share/fcitx5/rime"
 
 log_section "fcitx5 mint 主题"
-git_clone_or_skip https://github.com/witt-bit/fcitx5-theme-mint.git /tmp/fcitx5-theme-mint
-bash /tmp/fcitx5-theme-mint/install.sh
+MINT_SRC="$HOME/.local/share/themes-src/fcitx5-theme-mint"
+mkdir -p "$HOME/.local/share/themes-src"
+git_clone_or_skip https://github.com/witt-bit/fcitx5-theme-mint.git "$MINT_SRC"
+# 检查主题是否已安装（安装到 ~/.local/share/fcitx5/themes/）
+if ls -d "$HOME/.local/share/fcitx5/themes/Mint"* &>/dev/null 2>&1; then
+    log_info "fcitx5 mint 主题已安装，跳过"
+else
+    bash "$MINT_SRC/install.sh"
+    log_success "fcitx5 mint 主题安装完成"
+fi
 
 log_success "fcitx5 完成"
