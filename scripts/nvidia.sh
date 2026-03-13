@@ -24,7 +24,7 @@ if _nonfree_enabled; then
     log_info "non-free 仓库已启用，跳过"
 else
     # 优先更新 DEB822 格式（Debian 13 默认）
-    DEB822_FILE=$(grep -rlE '^Suites:.*trixie' /etc/apt/sources.list.d/*.sources 2>/dev/null | head -1)
+    DEB822_FILE=$(grep -rlE '^Suites:.*trixie' /etc/apt/sources.list.d/*.sources 2>/dev/null | head -1) || true
     if [[ -n "$DEB822_FILE" ]]; then
         log_info "更新 DEB822 源文件：$DEB822_FILE"
         # 在 Components 行追加 contrib non-free non-free-firmware（避免重复）
@@ -86,7 +86,7 @@ fi
 log_section "为 6.6 内核编译 NVIDIA DKMS 模块"
 
 # 兼容旧格式 "nvidia/xxx, ..." 和新格式 "nvidia/xxx: ..."
-NVIDIA_VER=$(dkms status | grep -oP 'nvidia/\K[\d.]+' | head -1)
+NVIDIA_VER=$(dkms status | grep -oP 'nvidia/\K[\d.]+' | head -1) || true
 [[ -z "$NVIDIA_VER" ]] && log_error "无法获取 nvidia DKMS 版本" fatal
 log_info "NVIDIA DKMS 版本：$NVIDIA_VER"
 
