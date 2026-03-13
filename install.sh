@@ -44,7 +44,7 @@ progress_tick
 # ── Flatpak 源 ────────────────────────────────────────────
 log_section "Flatpak 初始化"
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo --user
-# flatpak remote-modify flathub --url=https://mirror.sjtu.edu.cn/flathub --user
+flatpak remote-modify flathub --url=https://mirrors.ustc.edu.cn/flathub --user
 progress_tick
 
 # ── AstroNvim ────────────────────────────────────────────
