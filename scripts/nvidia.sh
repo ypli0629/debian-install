@@ -7,41 +7,17 @@ check_sudo
 # ── 启用 non-free 仓库 ────────────────────────────────────
 log_section "启用 contrib / non-free / non-free-firmware 仓库"
 
-# 检查 non-free（不含 non-free-firmware）是否已启用
-# Debian 13 默认可能只有 non-free-firmware，NVIDIA 驱动需要 non-free
-_nonfree_enabled() {
-    # 旧格式 sources.list / .list：non-free 后跟空格或行尾（排除 non-free-firmware）
-    grep -hE '^deb[[:space:]].*trixie' /etc/apt/sources.list \
-        /etc/apt/sources.list.d/*.list 2>/dev/null \
-        | grep -qE '(^|[[:space:]])non-free($|[[:space:]])' && return 0
-    # DEB822 格式 .sources：Components 行含独立的 non-free 词
-    grep -hE '^Components:' /etc/apt/sources.list.d/*.sources 2>/dev/null \
-        | grep -qE '(^|[[:space:]])non-free($|[[:space:]])' && return 0
-    return 1
-}
-
-if _nonfree_enabled; then
-    log_info "non-free 仓库已启用，跳过"
+# 直接写入独立的 nonfree.list（Debian wiki 推荐方式，兼容所有源格式）
+# 幂等：文件已存在则跳过
+NONFREE_LIST="/etc/apt/sources.list.d/nonfree.list"
+if [[ -f "$NONFREE_LIST" ]]; then
+    log_info "non-free 源已存在（$NONFREE_LIST），跳过"
 else
-    # 优先更新 DEB822 格式（Debian 13 默认）
-    DEB822_FILE=$(grep -rlE '^Suites:.*trixie' /etc/apt/sources.list.d/*.sources 2>/dev/null | head -1) || true
-    if [[ -n "$DEB822_FILE" ]]; then
-        log_info "更新 DEB822 源文件：$DEB822_FILE"
-        # 在 Components 行追加 contrib non-free non-free-firmware（避免重复）
-        sudo sed -i -E \
-            '/^Components:/{/ non-free /!{ / non-free$/!s/$/ contrib non-free non-free-firmware/}}' \
-            "$DEB822_FILE"
-        log_success "已在 $DEB822_FILE 中添加 contrib non-free non-free-firmware"
-    elif [[ -s "/etc/apt/sources.list" ]] && grep -qE '^deb[[:space:]].*trixie' /etc/apt/sources.list; then
-        sudo sed -i -E \
-            '/^deb[[:space:]].*trixie/{/non-free-firmware/b; s/$/ contrib non-free non-free-firmware/}' \
-            /etc/apt/sources.list
-        log_success "已为 sources.list 中的 trixie 源行添加 contrib non-free non-free-firmware"
-    else
-        echo "deb http://deb.debian.org/debian trixie main contrib non-free non-free-firmware" \
-            | sudo tee /etc/apt/sources.list.d/nonfree.list > /dev/null
-        log_success "已写入 /etc/apt/sources.list.d/nonfree.list"
-    fi
+    sudo tee "$NONFREE_LIST" > /dev/null <<'EOF'
+deb http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
+deb http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
+EOF
+    log_success "已写入 $NONFREE_LIST"
 fi
 
 sudo apt update
