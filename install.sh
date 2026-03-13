@@ -6,6 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/utils.sh"
 
 check_sudo
+progress_init 18
 
 # ── 系统更新 ──────────────────────────────────────────────
 log_section "系统更新"
@@ -15,10 +16,12 @@ sudo apt install -y zsh git curl wget ca-certificates flatpak gnome-software-plu
     build-essential cmake pkg-config \
     fonts-noto-cjk fonts-noto-cjk-extra \
     default-jdk
+progress_tick
 
 # ── 目录 ─────────────────────────────────────────────────
 log_section "创建目录"
 mkdir -p ~/Desktop/{source,work,caffe,learn}
+progress_tick
 
 # ── Git ──────────────────────────────────────────────────
 log_section "Git 全局配置"
@@ -29,16 +32,19 @@ else
     log_info "Git 全局账户已配置（$(git config --global user.name) / $(git config --global user.email)），跳过"
 fi
 git config --global credential.helper store
+progress_tick
 
 # ── Flatpak 源 ────────────────────────────────────────────
 log_section "Flatpak 初始化"
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo --user
 # flatpak remote-modify flathub --url=https://mirror.sjtu.edu.cn/flathub --user
+progress_tick
 
 # ── AstroNvim ────────────────────────────────────────────
 log_section "AstroNvim 配置"
 git_clone_or_skip https://github.com/ypli0629/astronvim_config.git ~/.config/nvim \
     || record_failure "AstroNvim 配置克隆"
+progress_tick
 
 # ── Docker Engine ─────────────────────────────────────────
 log_section "Docker Engine"
@@ -56,6 +62,7 @@ else
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
     sudo usermod -aG docker "$USER"
 fi
+progress_tick
 
 # ── Docker Desktop ────────────────────────────────────────
 log_section "Docker Desktop"
@@ -71,6 +78,7 @@ else
         record_failure "Docker Desktop" "下载失败"
     fi
 fi
+progress_tick
 
 # ── Clash Verge Rev ──────────────────────────────────────
 log_section "Clash Verge Rev"
@@ -91,6 +99,7 @@ else
         record_failure "Clash Verge Rev" "获取 GitHub Release 链接失败"
     fi
 fi
+progress_tick
 
 # ── SwitchHosts ──────────────────────────────────────────
 log_section "SwitchHosts"
@@ -111,6 +120,7 @@ else
         record_failure "SwitchHosts" "获取 GitHub Release 链接失败"
     fi
 fi
+progress_tick
 
 # ── JetBrains Toolbox ─────────────────────────────────────
 log_section "JetBrains Toolbox"
@@ -138,17 +148,26 @@ else
         record_failure "JetBrains Toolbox" "获取下载链接失败"
     fi
 fi
+progress_tick
 
 # ── 子脚本 ────────────────────────────────────────────────
 log_section "执行子脚本"
 bash "$SCRIPT_DIR/scripts/kernel.sh"   || record_failure "kernel.sh"
+progress_tick
 bash "$SCRIPT_DIR/scripts/nvidia.sh"   || record_failure "nvidia.sh"
+progress_tick
 bash "$SCRIPT_DIR/scripts/brew.sh"     || record_failure "brew.sh"
+progress_tick
 bash "$SCRIPT_DIR/scripts/zsh.sh"      || record_failure "zsh.sh"
+progress_tick
 bash "$SCRIPT_DIR/scripts/fcitx.sh"    || record_failure "fcitx.sh"
+progress_tick
 bash "$SCRIPT_DIR/scripts/gnome.sh"    || record_failure "gnome.sh"
+progress_tick
 bash "$SCRIPT_DIR/scripts/theme.sh"    || record_failure "theme.sh"
+progress_tick
 bash "$SCRIPT_DIR/scripts/flatpak.sh"  || record_failure "flatpak.sh"
+progress_tick
 
 # ── 安装报告 ──────────────────────────────────────────────
 log_section "安装报告"

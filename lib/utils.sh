@@ -60,6 +60,42 @@ git_clone_or_skip() {
     git clone "$repo" "$dest"
 }
 
+# ── 进度条 ────────────────────────────────────────────────
+PROGRESS_TOTAL=0
+PROGRESS_CURRENT=0
+
+progress_init() {
+    PROGRESS_TOTAL="${1:-0}"
+    PROGRESS_CURRENT=0
+    [[ -t 1 ]] && printf '\n'   # 为底部进度条预留一行
+}
+
+_progress_draw() {
+    [[ ! -t 1 ]] && return
+    [[ "$PROGRESS_TOTAL" -eq 0 ]] && return
+    local cols lines width filled empty bar pct i
+    cols=$(tput cols 2>/dev/null || echo 80)
+    lines=$(tput lines 2>/dev/null || echo 24)
+    width=$(( cols - 24 ))
+    [[ $width -lt 10 ]] && width=10
+    filled=$(( PROGRESS_CURRENT * width / PROGRESS_TOTAL ))
+    empty=$(( width - filled ))
+    bar=""
+    for ((i=0; i<filled; i++)); do bar+="█"; done
+    for ((i=0; i<empty; i++)); do bar+="░"; done
+    pct=$(( PROGRESS_CURRENT * 100 / PROGRESS_TOTAL ))
+    tput sc
+    tput cup $(( lines - 1 )) 0
+    printf "\033[K${BOLD}${BLUE} 进度 [${GREEN}%s${BLUE}] %d/%d (${GREEN}%3d%%${BLUE})${NC}" \
+        "$bar" "$PROGRESS_CURRENT" "$PROGRESS_TOTAL" "$pct"
+    tput rc
+}
+
+progress_tick() {
+    PROGRESS_CURRENT=$(( PROGRESS_CURRENT + 1 ))
+    _progress_draw
+}
+
 # ── 安全追加 ~/.zshrc（避免重复写入）─────────────────────
 append_zshrc_once() {
     local marker="$1"   # 用于判断是否已写入的标识字符串
