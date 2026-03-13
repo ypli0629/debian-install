@@ -73,6 +73,7 @@ progress_init() {
 _progress_draw() {
     [[ ! -t 1 ]] && return
     [[ "$PROGRESS_TOTAL" -eq 0 ]] && return
+    command -v tput &>/dev/null || return
     local cols lines width filled empty bar pct i
     cols=$(tput cols 2>/dev/null || echo 80)
     lines=$(tput lines 2>/dev/null || echo 24)
@@ -84,11 +85,11 @@ _progress_draw() {
     for ((i=0; i<filled; i++)); do bar+="█"; done
     for ((i=0; i<empty; i++)); do bar+="░"; done
     pct=$(( PROGRESS_CURRENT * 100 / PROGRESS_TOTAL ))
-    tput sc
-    tput cup $(( lines - 1 )) 0
+    tput sc 2>/dev/null || return
+    tput cup $(( lines - 1 )) 0 2>/dev/null || { tput rc 2>/dev/null; return; }
     printf "\033[K${BOLD}${BLUE} 进度 [${GREEN}%s${BLUE}] %d/%d (${GREEN}%3d%%${BLUE})${NC}" \
         "$bar" "$PROGRESS_CURRENT" "$PROGRESS_TOTAL" "$pct"
-    tput rc
+    tput rc 2>/dev/null || true
 }
 
 progress_tick() {

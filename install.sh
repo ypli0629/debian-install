@@ -1,5 +1,12 @@
 #!/bin/bash
 # 去掉 -e，让单步失败不中断整体流程；保留 -uo pipefail 捕获变量未定义和管道错误
+
+# 必须用 bash 运行，不兼容 sh/dash
+if [ -z "${BASH_VERSION:-}" ]; then
+    echo "错误：请用 bash 运行此脚本：bash install.sh" >&2
+    exit 1
+fi
+
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,7 +22,7 @@ sudo apt upgrade -y && sudo apt dist-upgrade -y
 sudo apt install -y zsh git curl wget ca-certificates flatpak gnome-software-plugin-flatpak \
     build-essential cmake pkg-config \
     fonts-noto-cjk fonts-noto-cjk-extra \
-    default-jdk
+    default-jdk ncurses-bin
 progress_tick
 
 # ── 目录 ─────────────────────────────────────────────────
