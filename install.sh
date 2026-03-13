@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/utils.sh"
 
 check_sudo
-progress_init 18
+progress_init 17
 
 # ── 系统更新 ──────────────────────────────────────────────
 log_section "系统更新"
@@ -158,10 +158,9 @@ fi
 progress_tick
 
 # ── 子脚本 ────────────────────────────────────────────────
+# nvidia.sh 需重启进入新内核后手动执行
 log_section "执行子脚本"
 bash "$SCRIPT_DIR/scripts/kernel.sh"   || record_failure "kernel.sh"
-progress_tick
-bash "$SCRIPT_DIR/scripts/nvidia.sh"   || record_failure "nvidia.sh"
 progress_tick
 bash "$SCRIPT_DIR/scripts/brew.sh"     || record_failure "brew.sh"
 progress_tick
@@ -180,3 +179,7 @@ progress_tick
 log_section "安装报告"
 print_report
 log_success "完成！请重启系统以使所有配置生效。"
+echo ""
+log_info "后续手动步骤："
+log_info "  1. 重启进入 mainline 6.6 内核"
+log_info "  2. bash scripts/nvidia.sh   # 安装 NVIDIA 驱动"
