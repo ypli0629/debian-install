@@ -95,12 +95,12 @@ sudo update-grub 2>/dev/null
 # ── 读取子菜单标题并验证入口 ──────────────────────────────
 ENTRY_TITLE="Debian GNU/Linux, with Linux ${KERNEL_VER}"
 
-if ! grep -qF "$ENTRY_TITLE" "$GRUB_CFG"; then
+if ! sudo grep -qF "$ENTRY_TITLE" "$GRUB_CFG"; then
     log_error "grub.cfg 中未找到入口：$ENTRY_TITLE" fatal
 fi
 
 # 解析 submenu 标题，并校验解析结果非空
-SUBMENU_TITLE=$(grep -m1 "^submenu " "$GRUB_CFG" \
+SUBMENU_TITLE=$(sudo grep -m1 "^submenu " "$GRUB_CFG" \
     | sed "s/submenu '\\([^']*\\)'.*/\\1/")
 if [[ -z "$SUBMENU_TITLE" ]]; then
     log_error "无法解析 grub.cfg 中的 submenu 标题，请手动设置 GRUB_DEFAULT" fatal
