@@ -29,7 +29,7 @@ else
         log_info "更新 DEB822 源文件：$DEB822_FILE"
         # 在 Components 行追加 contrib non-free non-free-firmware（避免重复）
         sudo sed -i -E \
-            '/^Components:/{/\bnon-free\b/!s/$/ contrib non-free non-free-firmware/}' \
+            '/^Components:/{/ non-free /!{ / non-free$/!s/$/ contrib non-free non-free-firmware/}}' \
             "$DEB822_FILE"
         log_success "已在 $DEB822_FILE 中添加 contrib non-free non-free-firmware"
     elif [[ -s "/etc/apt/sources.list" ]] && grep -qE '^deb[[:space:]].*trixie' /etc/apt/sources.list; then
@@ -71,8 +71,16 @@ else
 fi
 
 # ── 安装驱动 ──────────────────────────────────────────────
-log_section "安装 NVIDIA 驱动（proprietary + DKMS）"
-sudo apt install -y nvidia-kernel-dkms nvidia-driver
+# nvidia-open-kernel-dkms：Turing/Ampere/Ada 架构推荐（官方开源内核模块）
+# nvidia-kernel-dkms：Maxwell/Pascal/Volta 等旧架构使用 proprietary 版本
+log_section "安装 NVIDIA 驱动"
+if apt-cache show nvidia-open-kernel-dkms &>/dev/null 2>&1; then
+    log_info "检测到 nvidia-open-kernel-dkms 可用，使用开源内核模块（推荐 Turing+）"
+    sudo apt install -y nvidia-open-kernel-dkms nvidia-driver
+else
+    log_info "使用 proprietary 内核模块"
+    sudo apt install -y nvidia-kernel-dkms nvidia-driver
+fi
 
 # ── 为每个 6.6.x 内核显式触发 DKMS 编译 ──────────────────
 log_section "为 6.6 内核编译 NVIDIA DKMS 模块"
@@ -94,20 +102,9 @@ for KERNEL_VER in "${MAINLINE_KERNELS[@]}"; do
     log_success "编译成功：${KERNEL_VER}"
 done
 
-# ── 屏蔽 nouveau ──────────────────────────────────────────
-log_section "屏蔽 nouveau 驱动"
-BLACKLIST_FILE="/etc/modprobe.d/blacklist-nouveau.conf"
-if [[ ! -f "$BLACKLIST_FILE" ]]; then
-    sudo tee "$BLACKLIST_FILE" > /dev/null <<'EOF'
-blacklist nouveau
-options nouveau modeset=0
-EOF
-    log_success "已写入 $BLACKLIST_FILE"
-else
-    log_info "nouveau 已屏蔽，跳过"
-fi
-
 # ── 更新 initramfs ────────────────────────────────────────
+# nouveau 由 nvidia-driver 安装时自动黑名单化（/etc/modprobe.d/nvidia.conf）
+# 无需手动写入，更新 initramfs 使黑名单生效即可
 log_section "更新 initramfs"
 sudo update-initramfs -u -k all
 log_success "initramfs 已更新"
