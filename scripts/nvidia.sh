@@ -47,11 +47,15 @@ for k in "${MAINLINE_KERNELS[@]}"; do
     log_info "找到 mainline 内核头文件：$k"
 done
 
-# ── 检测 GPU ──────────────────────────────────────────────
+# ── 检测 GPU（nvidia-detect 为可选包，trixie 中可能不存在）──
 log_section "检测 NVIDIA GPU"
-sudo apt install -y nvidia-detect
-DETECT_OUT=$(nvidia-detect 2>&1) || true   # nvidia-detect 找到 GPU 时退出码非 0，须屏蔽
-log_info "$DETECT_OUT"
+if apt-cache show nvidia-detect &>/dev/null 2>&1; then
+    sudo apt install -y nvidia-detect
+    DETECT_OUT=$(nvidia-detect 2>&1) || true
+    log_info "$DETECT_OUT"
+else
+    log_info "nvidia-detect 在当前仓库中不可用，跳过 GPU 检测，继续安装驱动"
+fi
 
 # ── 安装驱动 ──────────────────────────────────────────────
 log_section "安装 NVIDIA 驱动（proprietary + DKMS）"
