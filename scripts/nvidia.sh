@@ -40,6 +40,8 @@ log_section "安装 NVIDIA 驱动"
 if dpkg-query -W -f='${Status}' nvidia-driver 2>/dev/null | grep -q "install ok installed"; then
     log_info "NVIDIA 驱动已安装，跳过"
 else
+    # DKMS 编译内核模块需要与内核匹配的 GCC（trixie 内核默认由 gcc-13 编译）
+    sudo apt install -y gcc-13
     sudo apt install -y nvidia-kernel-dkms nvidia-driver
     log_success "NVIDIA 驱动安装完成，请重启系统以加载驱动"
 fi
