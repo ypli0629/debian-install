@@ -127,7 +127,7 @@ if [[ -x "$TOOLBOX_BIN" ]]; then
 else
     TOOLBOX_URL=$(curl -fsSL \
         "https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release" \
-        | grep -oP 'https://download\.jetbrains\.com/toolbox/jetbrains-toolbox-[^"]+\.tar\.gz' \
+        | grep -oE 'https://download\.jetbrains\.com/toolbox/jetbrains-toolbox-[^"]+\.tar\.gz' \
         | head -1) || TOOLBOX_URL=""
     if [[ -n "$TOOLBOX_URL" ]]; then
         if wget --timeout=60 -q -O /tmp/jetbrains-toolbox.tar.gz "$TOOLBOX_URL"; then

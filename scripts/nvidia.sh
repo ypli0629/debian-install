@@ -4,44 +4,41 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 
 check_sudo
 
-# ── 启用 non-free 仓库 ────────────────────────────────────
-log_section "启用 non-free 仓库"
+NVIDIA_VERSION="580.126.09"
+NVIDIA_RUN="NVIDIA-Linux-x86_64-${NVIDIA_VERSION}.run"
+NVIDIA_URL="https://download.nvidia.com/XFree86/Linux-x86_64/${NVIDIA_VERSION}/${NVIDIA_RUN}"
 
-# 检查所有源文件（含镜像）是否已有独立的 non-free 组件
-_nonfree_enabled() {
-    grep -rh '^deb ' /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null \
-        | grep -vE '^#' \
-        | grep -qE '[[:space:]]non-free([[:space:]]|$)'
-}
+# ── 检查是否已安装 ──────────────────────────────────────
+log_section "NVIDIA 驱动（官方 .run 安装包）"
 
-NONFREE_LIST="/etc/apt/sources.list.d/nonfree.list"
-if _nonfree_enabled; then
-    log_info "non-free 已在现有源中启用，跳过"
-    # 如果之前误写了 nonfree.list 导致重复，自动清除
-    if [[ -f "$NONFREE_LIST" ]]; then
-        sudo rm -f "$NONFREE_LIST"
-        log_info "已删除重复的 $NONFREE_LIST"
+if command -v nvidia-smi &>/dev/null; then
+    INSTALLED_VER=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1)
+    if [[ "$INSTALLED_VER" == "$NVIDIA_VERSION" ]]; then
+        log_info "NVIDIA 驱动 ${NVIDIA_VERSION} 已安装，跳过"
+        exit 0
+    else
+        log_info "当前版本 ${INSTALLED_VER:-未知}，将升级到 ${NVIDIA_VERSION}"
     fi
-elif [[ -f "$NONFREE_LIST" ]]; then
-    log_info "non-free 源已存在（$NONFREE_LIST），跳过"
-else
-    sudo tee "$NONFREE_LIST" > /dev/null <<'EOF'
-deb http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
-deb http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
-EOF
-    log_success "已写入 $NONFREE_LIST"
 fi
 
-sudo apt update
+# ── 安装编译依赖 ────────────────────────────────────────
+log_section "安装编译依赖"
+sudo apt install -y gcc make linux-headers-"$(uname -r)"
+log_success "编译依赖就绪"
 
-# ── 安装 NVIDIA 驱动 ──────────────────────────────────────
-# 使用 proprietary 内核模块（nvidia-open-kernel-dkms 与 mainline 内核兼容性差）
+# ── 下载 ────────────────────────────────────────────────
+log_section "下载 NVIDIA 驱动"
+if [[ -f "/tmp/${NVIDIA_RUN}" ]]; then
+    log_info "已存在 /tmp/${NVIDIA_RUN}，跳过下载"
+else
+    gh_wget "$NVIDIA_URL" "/tmp/${NVIDIA_RUN}"
+    log_success "下载完成"
+fi
+chmod +x "/tmp/${NVIDIA_RUN}"
+
+# ── 安装 ────────────────────────────────────────────────
 log_section "安装 NVIDIA 驱动"
-if dpkg-query -W -f='${Status}' nvidia-driver 2>/dev/null | grep -q "install ok installed"; then
-    log_info "NVIDIA 驱动已安装，跳过"
-else
-    # DKMS 编译内核模块需要与内核匹配的 GCC（trixie 内核默认由 gcc-13 编译）
-    sudo apt install -y gcc-13
-    sudo apt install -y nvidia-kernel-dkms nvidia-driver
-    log_success "NVIDIA 驱动安装完成，请重启系统以加载驱动"
-fi
+log_info "将以静默模式运行 .run 安装包..."
+sudo "/tmp/${NVIDIA_RUN}" --silent --dkms \
+    && log_success "NVIDIA 驱动 ${NVIDIA_VERSION} 安装完成，请重启系统以加载驱动" \
+    || log_error "NVIDIA 驱动安装失败，请检查编译日志 /var/log/nvidia-installer.log" fatal

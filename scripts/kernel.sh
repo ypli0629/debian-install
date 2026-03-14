@@ -20,7 +20,8 @@ fi
 log_section "查找 Ubuntu Mainline 6.6 最新版本"
 
 LATEST_TAG=$(curl -fsSL "${MAINLINE_BASE}/" \
-    | grep -oP 'v6\.6\.\d+(?!-rc)/' \
+    | grep -oE 'v6\.6\.[0-9]+/' \
+    | grep -v '\-rc' \
     | sort -V | tail -1 | tr -d '/')
 
 [[ -z "$LATEST_TAG" ]] && log_error "无法获取 6.6.x 版本列表" fatal
@@ -45,7 +46,7 @@ else
 
     # 需要的四个包：all headers、amd64 headers、modules、image-unsigned
     mapfile -t DEB_FILES < <(echo "$PKG_HTML" \
-        | grep -oP 'linux-(?:headers-[^"]+_all|headers-[^"]+_amd64|modules-[^"]+_amd64|image-unsigned-[^"]+_amd64)\.deb' \
+        | grep -oE 'linux-(headers-[^"]+_all|headers-[^"]+_amd64|modules-[^"]+_amd64|image-unsigned-[^"]+_amd64)\.deb' \
         | grep -v 'lowlatency\|snapdragon' \
         | sort -u)
 
@@ -59,7 +60,7 @@ else
     log_section "下载安装包"
 
     TMP_DIR=$(mktemp -d)
-    trap 'rm -rf "$TMP_DIR"' EXIT
+    trap 'rm -rf "$TMP_DIR"; kill "$SUDO_KEEP_ALIVE_PID" 2>/dev/null' EXIT INT TERM
 
     for deb in "${DEB_FILES[@]}"; do
         log_info "下载：$deb"
@@ -73,7 +74,7 @@ else
     # ── 锁定，防止 apt 干预 ───────────────────────────────────
     # 从文件名提取包名（去掉版本和架构后缀）
     for deb in "${DEB_FILES[@]}"; do
-        PKG_NAME=$(echo "$deb" | grep -oP '^[^_]+')
+        PKG_NAME=$(echo "$deb" | grep -oE '^[^_]+')
         sudo apt-mark hold "$PKG_NAME" 2>/dev/null || true
     done
     log_success "已锁定所有 mainline 包（apt-mark hold）"
