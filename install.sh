@@ -92,18 +92,13 @@ log_section "Clash Verge Rev"
 if dpkg-query -W -f='${Status}' clash-verge 2>/dev/null | grep -q "install ok installed"; then
     log_info "Clash Verge 已安装，跳过"
 else
-    CLASH_VERGE_URL=$(gh_curl "https://api.github.com/repos/clash-verge-rev/clash-verge-rev/releases/latest" \
-        | grep -oP '"browser_download_url":\s*"\K[^"]+amd64\.deb' | head -1) || CLASH_VERGE_URL=""
-    if [[ -n "$CLASH_VERGE_URL" ]]; then
-        if gh_wget "$CLASH_VERGE_URL" /tmp/clash-verge.deb; then
-            sudo apt install -y /tmp/clash-verge.deb \
-                && log_success "Clash Verge 安装完成" \
-                || record_failure "Clash Verge Rev" "apt install 失败"
-        else
-            record_failure "Clash Verge Rev" "下载失败"
-        fi
+    CLASH_VERGE_URL="https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.4.6/Clash.Verge_2.4.6_amd64.deb"
+    if gh_wget "$CLASH_VERGE_URL" /tmp/clash-verge.deb; then
+        sudo apt install -y /tmp/clash-verge.deb \
+            && log_success "Clash Verge 安装完成" \
+            || record_failure "Clash Verge Rev" "apt install 失败"
     else
-        record_failure "Clash Verge Rev" "获取 GitHub Release 链接失败"
+        record_failure "Clash Verge Rev" "下载失败"
     fi
 fi
 progress_tick
@@ -113,18 +108,13 @@ log_section "SwitchHosts"
 if command -v switchhosts &>/dev/null || dpkg-query -W -f='${Status}' switchhosts 2>/dev/null | grep -q "install ok installed"; then
     log_info "SwitchHosts 已安装，跳过"
 else
-    SWITCHHOSTS_URL=$(gh_curl "https://api.github.com/repos/oldj/SwitchHosts/releases/latest" \
-        | grep -oP '"browser_download_url":\s*"\K[^"]+linux_amd64[^"]+\.deb' | head -1) || SWITCHHOSTS_URL=""
-    if [[ -n "$SWITCHHOSTS_URL" ]]; then
-        if gh_wget "$SWITCHHOSTS_URL" /tmp/switchhosts.deb; then
-            sudo apt install -y /tmp/switchhosts.deb \
-                && log_success "SwitchHosts 安装完成" \
-                || record_failure "SwitchHosts" "apt install 失败"
-        else
-            record_failure "SwitchHosts" "下载失败"
-        fi
+    SWITCHHOSTS_URL="https://github.com/oldj/SwitchHosts/releases/download/v4.2.0/SwitchHosts_linux_amd64_4.2.0.6119.deb"
+    if gh_wget "$SWITCHHOSTS_URL" /tmp/switchhosts.deb; then
+        sudo apt install -y /tmp/switchhosts.deb \
+            && log_success "SwitchHosts 安装完成" \
+            || record_failure "SwitchHosts" "apt install 失败"
     else
-        record_failure "SwitchHosts" "获取 GitHub Release 链接失败"
+        record_failure "SwitchHosts" "下载失败"
     fi
 fi
 progress_tick
