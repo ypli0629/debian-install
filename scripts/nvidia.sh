@@ -36,9 +36,38 @@ else
 fi
 chmod +x "/tmp/${NVIDIA_RUN}"
 
-# ── 安装 ────────────────────────────────────────────────
-log_section "安装 NVIDIA 驱动"
-log_info "将以静默模式运行 .run 安装包..."
-sudo "/tmp/${NVIDIA_RUN}" --silent --dkms \
-    && log_success "NVIDIA 驱动 ${NVIDIA_VERSION} 安装完成，请重启系统以加载驱动" \
-    || log_error "NVIDIA 驱动安装失败，请检查编译日志 /var/log/nvidia-installer.log" fatal
+# ── 手动安装提示 ──────────────────────────────────────
+log_section "手动安装 NVIDIA 驱动"
+log_info "请在 tty 终端（Ctrl+Alt+F2）中执行以下命令："
+log_info "  sudo systemctl stop display-manager"
+log_info "  sudo /tmp/${NVIDIA_RUN} --silent --dkms"
+log_info "  sudo systemctl start display-manager"
+log_info "安装完成后重新运行本脚本以配置 Wayland 支持"
+
+# 未安装驱动时跳过后续 Wayland 配置
+if ! command -v nvidia-smi &>/dev/null; then
+    exit 0
+fi
+
+# ── 启用 Wayland 支持 ──────────────────────────────────
+# 参考：https://us.download.nvidia.com/XFree86/Linux-x86_64/580.126.09/README/kms.html
+#       https://us.download.nvidia.com/XFree86/Linux-x86_64/580.126.09/README/gbm.html
+log_section "配置 Wayland 支持"
+
+# 1. 开启 DRM KMS（Wayland 必需，NVIDIA 默认关闭）
+echo "options nvidia-drm modeset=1" | sudo tee /etc/modprobe.d/nvidia-drm.conf > /dev/null
+log_success "已启用 nvidia-drm modeset=1"
+
+# 2. 解除 GDM 对 NVIDIA + Wayland 的封锁（Debian/GNOME 默认禁用）
+sudo ln -sf /dev/null /etc/udev/rules.d/61-gdm.rules
+log_success "已覆盖 GDM udev 规则，允许 Wayland 登录"
+
+# 3. 安装 egl-wayland（GBM backend 依赖）
+sudo apt install -y libnvidia-egl-wayland1
+log_success "egl-wayland 已安装"
+
+# 4. 更新所有内核的 initramfs 使配置生效
+sudo update-initramfs -u -k all
+log_success "initramfs 已更新"
+
+log_success "完成，请重启系统以加载驱动并启用 Wayland"
