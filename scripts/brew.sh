@@ -12,12 +12,19 @@ else
     NONINTERACTIVE=1 /bin/bash -c "$(gh_curl https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-if [[ ! -f /etc/environment.d/brew.conf ]]; then
-    echo 'PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH"' \
-        | sudo tee /etc/environment.d/brew.conf > /dev/null
+# /etc/profile.d/：login shell 通用（终端、SSH 等）
+if [[ ! -f /etc/profile.d/linuxbrew.sh ]]; then
+    echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' \
+        | sudo tee /etc/profile.d/linuxbrew.sh > /dev/null
+    sudo chmod +x /etc/profile.d/linuxbrew.sh
+    log_success "已写入 /etc/profile.d/linuxbrew.sh"
 else
-    log_info "brew.conf 已存在，跳过"
+    log_info "/etc/profile.d/linuxbrew.sh 已存在，跳过"
 fi
+
+# ~/.zshrc：non-login interactive shell（GNOME Terminal 默认不是 login shell）
+append_zshrc_once '# linuxbrew shellenv' '# linuxbrew shellenv
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'
 
 BREW_BIN="/home/linuxbrew/.linuxbrew/bin/brew"
 if [[ -x "$BREW_BIN" ]]; then
