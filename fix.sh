@@ -71,6 +71,35 @@ else
     unset _var _key
 fi
 
+# ── /usr/sbin PATH ───────────────────────────────────────────────────────────
+log_section "添加 /usr/sbin 到系统 PATH"
+
+# /etc/profile.d/：login shell 通用
+if [[ ! -f /etc/profile.d/sbin-path.sh ]]; then
+    sudo tee /etc/profile.d/sbin-path.sh > /dev/null <<'EOF'
+# Ensure /usr/local/sbin and /usr/sbin are in PATH for all users
+for _sbin_dir in /usr/local/sbin /usr/sbin; do
+    case ":${PATH}:" in
+        *:"${_sbin_dir}":*) ;;
+        *) export PATH="${PATH}:${_sbin_dir}" ;;
+    esac
+done
+unset _sbin_dir
+EOF
+    sudo chmod +x /etc/profile.d/sbin-path.sh
+    log_success "已写入 /etc/profile.d/sbin-path.sh"
+else
+    log_info "/etc/profile.d/sbin-path.sh 已存在，跳过"
+fi
+
+# ~/.zshrc：non-login interactive shell（GNOME Terminal）
+if ! grep -qF '# sbin path' ~/.zshrc 2>/dev/null; then
+    printf '\n# sbin path\nexport PATH="$PATH:/usr/local/sbin:/usr/sbin"\n' >> ~/.zshrc
+    log_success "已写入 ~/.zshrc：sbin path"
+else
+    log_info "~/.zshrc 中已有 sbin path，跳过"
+fi
+
 # ── 完成 ─────────────────────────────────────────────────────────────────────
 echo ""
 log_success "修复完成，请重新登录（注销后重新登录）使配置生效"

@@ -28,6 +28,21 @@ progress_tick
 # ── 目录 ─────────────────────────────────────────────────
 log_section "创建目录"
 mkdir -p ~/Desktop/{source,work,caffe,learn}
+
+# Debian 默认不把 /usr/sbin 加入普通用户 PATH，写入 profile.d 全局生效
+if [[ ! -f /etc/profile.d/sbin-path.sh ]]; then
+    sudo tee /etc/profile.d/sbin-path.sh > /dev/null <<'EOF'
+# Ensure /usr/local/sbin and /usr/sbin are in PATH for all users
+for _sbin_dir in /usr/local/sbin /usr/sbin; do
+    case ":${PATH}:" in
+        *:"${_sbin_dir}":*) ;;
+        *) export PATH="${PATH}:${_sbin_dir}" ;;
+    esac
+done
+unset _sbin_dir
+EOF
+    sudo chmod +x /etc/profile.d/sbin-path.sh
+fi
 progress_tick
 
 # ── Git ──────────────────────────────────────────────────

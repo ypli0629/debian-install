@@ -53,7 +53,7 @@ alias nzsh="nvim ~/.zshrc"
 alias pon="export http_proxy=http://127.0.0.1:7890; export https_proxy=http://127.0.0.1:7890; export all_proxy=socks5://127.0.0.1:7890"
 alias poff="unset http_proxy; unset https_proxy; unset all_proxy"
 
-export PATH=~/.local/bin:~/go/bin:$PATH
+export PATH=~/.local/bin:~/go/bin:/usr/local/sbin:/usr/sbin:$PATH
 ___MY_VMOPTIONS_SHELL_FILE="${HOME}/.jetbrains.vmoptions.sh"; if [ -f "${___MY_VMOPTIONS_SHELL_FILE}" ]; then . "${___MY_VMOPTIONS_SHELL_FILE}"; fi
 
 # fzf shell 集成：Ctrl+R 历史搜索 / Ctrl+T 文件搜索 / Alt+C 目录跳转
