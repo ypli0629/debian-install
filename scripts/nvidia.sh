@@ -4,6 +4,12 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 
 check_sudo
 
+# ── 验证当前内核为 mainline 6.6.x ──────────────────────
+RUNNING_KERNEL=$(uname -r)
+if [[ "$RUNNING_KERNEL" != 6.6.*-*-generic ]]; then
+    log_error "当前内核 ${RUNNING_KERNEL} 不是预期的 mainline 6.6.x 内核，请先重启系统后再运行此脚本" fatal
+fi
+
 NVIDIA_VERSION="580.126.09"
 NVIDIA_RUN="NVIDIA-Linux-x86_64-${NVIDIA_VERSION}.run"
 NVIDIA_URL="https://download.nvidia.com/XFree86/Linux-x86_64/${NVIDIA_VERSION}/${NVIDIA_RUN}"
@@ -46,6 +52,10 @@ if [[ -f "$NVIDIA_RUN_PATH" ]]; then
     fi
 fi
 if [[ ! -f "$NVIDIA_RUN_PATH" ]]; then
+    # 验证 URL 可达，避免版本号有误时浪费时间
+    if ! curl -fsSI --connect-timeout 15 "$NVIDIA_URL" -o /dev/null 2>/dev/null; then
+        log_error "NVIDIA ${NVIDIA_VERSION} 下载地址不可达，版本号可能有误：${NVIDIA_URL}" fatal
+    fi
     gh_wget "$NVIDIA_URL" "$NVIDIA_RUN_PATH"
     log_success "下载完成"
 fi

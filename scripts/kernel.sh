@@ -30,8 +30,9 @@ log_info "最新版本：$LATEST_TAG"
 # ── 幂等性：已安装同版本则跳过下载和安装 ──────────────────
 # mainline 内核包名格式：linux-image-unsigned-6.6.87-060687-generic
 _kernel_installed() {
-    dpkg-query -W "linux-image-unsigned-${LATEST_TAG#v}*" 2>/dev/null \
-        | grep -qv '^$'
+    local ver="${LATEST_TAG#v}"
+    dpkg-query -W "linux-image-unsigned-${ver}*" 2>/dev/null | grep -qv '^$' && \
+    dpkg-query -W "linux-headers-${ver}*" 2>/dev/null | grep -qv '^$'
 }
 
 if _kernel_installed; then
@@ -69,7 +70,15 @@ else
 
     # ── 安装 ─────────────────────────────────────────────────
     log_section "安装内核"
-    sudo dpkg -i "${TMP_DIR}"/*.deb
+    # 按依赖顺序安装：all headers → amd64 headers → image → modules
+    _pick_deb() { printf '%s\n' "${DEB_FILES[@]}" | grep -E "$1" | head -1; }
+    ORDERED_DEBS=()
+    for pat in '_all\.deb$' 'headers.*_amd64\.deb$' 'image-unsigned.*_amd64\.deb$' 'modules.*_amd64\.deb$'; do
+        f=$(_pick_deb "$pat")
+        [[ -n "$f" ]] && ORDERED_DEBS+=("${TMP_DIR}/${f}")
+    done
+    [[ ${#ORDERED_DEBS[@]} -eq 0 ]] && log_error "无可安装的 .deb 包" fatal
+    sudo dpkg -i "${ORDERED_DEBS[@]}"
 
     # ── 锁定，防止 apt 干预 ───────────────────────────────────
     # 从文件名提取包名（去掉版本和架构后缀）
@@ -94,20 +103,25 @@ log_section "生成 GRUB 配置"
 sudo update-grub 2>/dev/null
 
 # ── 读取子菜单标题并验证入口 ──────────────────────────────
-ENTRY_TITLE="Debian GNU/Linux, with Linux ${KERNEL_VER}"
-
-if ! sudo grep -qF "$ENTRY_TITLE" "$GRUB_CFG"; then
-    log_error "grub.cfg 中未找到入口：$ENTRY_TITLE" fatal
+# 动态查找包含该内核版本的 menuentry 标题（兼容单/双引号，排除 recovery 条目）
+ENTRY_TITLE=$(sudo grep "menuentry .*${KERNEL_VER}" "$GRUB_CFG" \
+    | grep -v -i 'recovery\|rescue' \
+    | head -1 \
+    | sed -E "s/.*menuentry ['\"]([^'\"]+)['\"].*/\1/" || true)
+if [[ -z "$ENTRY_TITLE" ]]; then
+    log_error "grub.cfg 中未找到内核 ${KERNEL_VER} 的 menuentry" fatal
 fi
+log_info "找到 GRUB 条目：$ENTRY_TITLE"
 
-# 解析 submenu 标题，并校验解析结果非空
+# 解析 submenu 标题（兼容单/双引号）；无 submenu 时直接用条目标题
 SUBMENU_TITLE=$(sudo grep -m1 "^submenu " "$GRUB_CFG" \
-    | sed "s/submenu '\\([^']*\\)'.*/\\1/")
-if [[ -z "$SUBMENU_TITLE" ]]; then
-    log_error "无法解析 grub.cfg 中的 submenu 标题，请手动设置 GRUB_DEFAULT" fatal
+    | sed -E "s/^submenu ['\"]([^'\"]+)['\"].*/\1/" || true)
+if [[ -n "$SUBMENU_TITLE" ]]; then
+    GRUB_DEFAULT_VAL="${SUBMENU_TITLE}>${ENTRY_TITLE}"
+else
+    log_info "grub.cfg 中无 submenu，直接使用条目标题"
+    GRUB_DEFAULT_VAL="$ENTRY_TITLE"
 fi
-
-GRUB_DEFAULT_VAL="${SUBMENU_TITLE}>${ENTRY_TITLE}"
 log_info "GRUB_DEFAULT → $GRUB_DEFAULT_VAL"
 
 # ── 写入 /etc/default/grub ────────────────────────────────
@@ -133,10 +147,21 @@ GRUB_CFG="/boot/grub/grub.cfg"
 
 update-grub 2>/dev/null
 
-SUBMENU_TITLE=$(grep -m1 "^submenu " "$GRUB_CFG" | sed "s/submenu '\\([^']*\\)'.*/\\1/")
-[[ -z "$SUBMENU_TITLE" ]] && exit 1
-ENTRY_TITLE="Debian GNU/Linux, with Linux ${KERNEL_VERSION}"
-GRUB_DEFAULT_VAL="${SUBMENU_TITLE}>${ENTRY_TITLE}"
+# 动态查找 menuentry 标题（兼容单/双引号，排除 recovery）
+ENTRY_TITLE=$(grep "menuentry .*${KERNEL_VERSION}" "$GRUB_CFG" \
+    | grep -v -i 'recovery\|rescue' \
+    | head -1 \
+    | sed -E "s/.*menuentry ['\"]([^'\"]+)['\"].*/\1/" || true)
+[[ -z "$ENTRY_TITLE" ]] && ENTRY_TITLE="Debian GNU/Linux, with Linux ${KERNEL_VERSION}"
+
+# 解析 submenu 标题（兼容单/双引号）；无 submenu 时直接用条目标题
+SUBMENU_TITLE=$(grep -m1 "^submenu " "$GRUB_CFG" \
+    | sed -E "s/^submenu ['\"]([^'\"]+)['\"].*/\1/" || true)
+if [[ -n "$SUBMENU_TITLE" ]]; then
+    GRUB_DEFAULT_VAL="${SUBMENU_TITLE}>${ENTRY_TITLE}"
+else
+    GRUB_DEFAULT_VAL="$ENTRY_TITLE"
+fi
 
 sed -i "s|^GRUB_DEFAULT=.*|GRUB_DEFAULT=\"${GRUB_DEFAULT_VAL}\"|" "$GRUB_DEFAULT_FILE"
 update-grub 2>/dev/null
