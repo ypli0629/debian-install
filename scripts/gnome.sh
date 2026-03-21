@@ -5,7 +5,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/utils.sh"
 check_sudo
 
 log_section "安装依赖"
-sudo apt install -y flameshot gnome-tweaks gnome-shell-extension-manager gnome-shell-extensions
+sudo apt install -y flameshot gnome-tweaks gnome-shell-extension-manager
 
 # ── 检查 GNOME 桌面环境 ───────────────────────────────────
 # gsettings 依赖 DBUS session，在 TTY/SSH 无桌面环境下会失败
@@ -39,13 +39,5 @@ gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/or
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ name 'gnome-terminal'
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ command 'gnome-terminal'
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ binding '<Super>Return'
-
-log_section "启用 User Themes 扩展"
-# MacTahoe 主题必须依赖此扩展才能在 GNOME 中生效
-if gnome-extensions enable user-theme@gnome-shell-extensions.gcampax.github.com 2>/dev/null; then
-    log_success "User Themes 扩展已启用"
-else
-    log_info "User Themes 扩展启用失败，请在扩展管理器中手动启用后应用 MacTahoe 主题"
-fi
 
 log_success "GNOME 快捷键配置完成"
