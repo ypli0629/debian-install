@@ -7,6 +7,8 @@ check_sudo
 NVIDIA_VERSION="580.126.09"
 NVIDIA_RUN="NVIDIA-Linux-x86_64-${NVIDIA_VERSION}.run"
 NVIDIA_URL="https://download.nvidia.com/XFree86/Linux-x86_64/${NVIDIA_VERSION}/${NVIDIA_RUN}"
+NVIDIA_CACHE_DIR="$HOME/.cache/nvidia"
+NVIDIA_RUN_PATH="${NVIDIA_CACHE_DIR}/${NVIDIA_RUN}"
 
 # ── 检查是否已安装 ──────────────────────────────────────
 log_section "NVIDIA 驱动（官方 .run 安装包）"
@@ -23,24 +25,37 @@ fi
 
 # ── 安装编译依赖 ────────────────────────────────────────
 log_section "安装编译依赖"
-sudo apt install -y gcc make dkms linux-headers-"$(uname -r)"
+if apt-cache show "linux-headers-$(uname -r)" &>/dev/null; then
+    sudo apt install -y gcc make dkms "linux-headers-$(uname -r)"
+else
+    log_info "linux-headers-$(uname -r) 不在 apt 仓库中，跳过（内核已内置头文件）"
+    sudo apt install -y gcc make dkms
+fi
 log_success "编译依赖就绪"
 
 # ── 下载 ────────────────────────────────────────────────
 log_section "下载 NVIDIA 驱动"
-if [[ -f "/tmp/${NVIDIA_RUN}" ]]; then
-    log_info "已存在 /tmp/${NVIDIA_RUN}，跳过下载"
-else
-    gh_wget "$NVIDIA_URL" "/tmp/${NVIDIA_RUN}"
+mkdir -p "$NVIDIA_CACHE_DIR"
+if [[ -f "$NVIDIA_RUN_PATH" ]]; then
+    FILE_SIZE=$(stat -c%s "$NVIDIA_RUN_PATH" 2>/dev/null || echo 0)
+    if [[ "$FILE_SIZE" -lt 104857600 ]]; then
+        log_info "缓存文件不完整（$(( FILE_SIZE / 1024 / 1024 ))MB），重新下载"
+        rm -f "$NVIDIA_RUN_PATH"
+    else
+        log_info "已存在 ${NVIDIA_RUN_PATH}，跳过下载"
+    fi
+fi
+if [[ ! -f "$NVIDIA_RUN_PATH" ]]; then
+    gh_wget "$NVIDIA_URL" "$NVIDIA_RUN_PATH"
     log_success "下载完成"
 fi
-chmod +x "/tmp/${NVIDIA_RUN}"
+chmod +x "$NVIDIA_RUN_PATH"
 
 # ── 手动安装提示 ──────────────────────────────────────
 log_section "手动安装 NVIDIA 驱动"
 log_info "请在 tty 终端（Ctrl+Alt+F2）中执行以下命令："
 log_info "  sudo systemctl stop display-manager"
-log_info "  sudo /tmp/${NVIDIA_RUN} --dkms"
+log_info "  sudo ${NVIDIA_RUN_PATH} --dkms"
 log_info "  sudo systemctl start display-manager"
 log_info "  sudo ln -sf /dev/null /etc/udev/rules.d/61-gdm.rules"
 log_info "安装完成后重新运行本脚本以配置 Wayland 支持"
