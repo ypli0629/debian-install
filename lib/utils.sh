@@ -46,7 +46,7 @@ gh_wget() {
         echo -e "${RED}  ✗ 下载 URL 为空${NC}" >&2
         return 1
     fi
-    wget --timeout=60 -q -O "$output" "$url"
+    wget --timeout=60 --show-progress -O "$output" "$url"
 }
 
 # ── Git clone（已存在则跳过）──────────────────────────────
