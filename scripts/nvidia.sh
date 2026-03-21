@@ -42,6 +42,7 @@ log_info "请在 tty 终端（Ctrl+Alt+F2）中执行以下命令："
 log_info "  sudo systemctl stop display-manager"
 log_info "  sudo /tmp/${NVIDIA_RUN} --silent --dkms"
 log_info "  sudo systemctl start display-manager"
+log_info "  sudo ln -s /dev/null /etc/udev/rules.d/61-gdm.rules"
 log_info "安装完成后重新运行本脚本以配置 Wayland 支持"
 
 # 未安装驱动时跳过后续 Wayland 配置
