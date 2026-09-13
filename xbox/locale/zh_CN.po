@@ -1,0 +1,384 @@
+msgid ""
+msgstr ""
+"Language: zh_CN\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "100 is solid; lower values add the Liquid Glass translucency"
+msgstr "100 为不透明；数值越小越接近 Liquid Glass 的半透明效果"
+
+msgid "Above Window"
+msgstr "窗口上方"
+
+msgid "Activate After Closing Tab"
+msgstr "关闭标签后激活"
+
+msgid "Add proxy mode switching to quick settings; disable the standalone Proxy Switcher extension"
+msgstr "在快速设置中加入代理模式切换，需停用独立的 Proxy Switcher 扩展"
+
+msgid "All-in-one toolbox that gathers common system actions and custom utilities into the top panel."
+msgstr "万能工具集合。把常用系统操作与自定义工具聚合到顶栏面板，模块化架构便于持续扩展。"
+
+msgid "Allow Cross-app Merging"
+msgstr "允许跨应用合并"
+
+msgid "Also allow triggering in fullscreen"
+msgstr "全屏时也允许触发"
+
+msgid "Also show the overview when triggered"
+msgstr "触发时同时显示总览"
+
+msgid "Always"
+msgstr "总是"
+
+msgid "Animation"
+msgstr "动画"
+
+msgid "Applies during manual merge"
+msgstr "手动合并时生效"
+
+msgid "Apps Never Auto-grouped"
+msgstr "永不自动分组的应用"
+
+msgid "Auto"
+msgstr "自动"
+
+msgid "Auto Grouping"
+msgstr "自动聚合"
+
+msgid "Auto-group Policy"
+msgstr "自动入组策略"
+
+msgid "Auto-group when a second window of the same app appears, no shortcut needed"
+msgstr "同应用出现第二个窗口时自动聚合，无需快捷键"
+
+msgid "Auto-hide Delay (ms)"
+msgstr "自动隐藏延时（毫秒）"
+
+msgid "Auto-merge Windows"
+msgstr "自动合并窗口"
+
+msgid "Autohide animation duration (seconds)"
+msgstr "自动隐藏动画时长（秒）"
+
+msgid "Autohide delay after shortcut (seconds)"
+msgstr "快捷键后自动隐藏延时（秒）"
+
+msgid "Automatically hide the overview after login"
+msgstr "登录后自动隐藏总览界面"
+
+msgid "Automatically hide the top bar, show when the pointer approaches the top edge; disable the standalone Hide Top Bar extension"
+msgstr "自动隐藏顶栏，鼠标靠近屏幕上边缘时显示，需停用独立的 Hide Top Bar 扩展"
+
+msgid "Background Opacity"
+msgstr "背景不透明度"
+
+msgid "Below Window"
+msgstr "窗口下方"
+
+msgid "Bottom corner radius of the top bar; 0 disables it"
+msgstr "顶栏底部圆角半径，0 表示关闭"
+
+msgid "Button Padding"
+msgstr "按钮内边距"
+
+msgid "Center"
+msgstr "居中"
+
+msgid "Clear"
+msgstr "清除"
+
+msgid "Clock Offset"
+msgstr "时钟偏移"
+
+msgid "Clock Position"
+msgstr "时钟位置"
+
+msgid "Close Tab"
+msgstr "关闭标签"
+
+msgid "Corner Radius"
+msgstr "圆角半径"
+
+msgid "Ctrl+Number Jumps to Tab"
+msgstr "Ctrl+数字直达标签"
+
+msgid "Don't Show Overview on Startup"
+msgstr "启动不显示总览"
+
+msgid "Edge trigger area"
+msgstr "边缘触发范围"
+
+msgid "Enable features as needed; re-enable the extension after changes."
+msgstr "按需启用各功能，修改后需重新启用扩展。"
+
+msgid "Enable intellihide"
+msgstr "启用智能隐藏"
+
+msgid "Enable macOS Tahoe Style"
+msgstr "一键启用 macOS Tahoe 风格"
+
+msgid "Entry point for Xbox in the top panel."
+msgstr "Xbox 在系统顶栏上的入口。"
+
+msgid "Extension Settings"
+msgstr "扩展设置"
+
+msgid "Fade Animation on Tab Switch"
+msgstr "切换标签时淡入动画"
+
+msgid "Falls back to top when panel mode fails"
+msgstr "顶栏模式失败时自动回退到上方"
+
+msgid "Feature Modules"
+msgstr "功能模块"
+
+msgid "Fullscreen Only"
+msgstr "仅全屏"
+
+msgid "General"
+msgstr "通用"
+
+msgid "Group per Workspace"
+msgstr "按工作区分组"
+
+msgid "Hide Top Bar"
+msgstr "隐藏顶栏"
+
+msgid "Horizontal margin; greater than 0 makes the bar float"
+msgstr "左右外边距，大于 0 时顶栏悬浮"
+
+msgid "Horizontal padding of panel buttons"
+msgstr "面板按钮的水平内边距"
+
+msgid "How deep the pointer must push into the screen edge"
+msgstr "指针需要推入屏幕边缘的深度"
+
+msgid "How long to hold against the edge before it counts as a trigger"
+msgstr "顶住边缘多久后判定为触发"
+
+msgid "Icon Size"
+msgstr "图标大小"
+
+msgid "Icon Spacing"
+msgstr "图标间距"
+
+msgid "In Panel"
+msgstr "顶栏内"
+
+msgid "Intellihide"
+msgstr "智能隐藏"
+
+msgid "Keep hot corner when hidden"
+msgstr "隐藏时保留热区"
+
+msgid "Keep top rounded corners when hidden"
+msgstr "隐藏时保留顶部圆角"
+
+msgid "Left"
+msgstr "左侧"
+
+msgid "Left Tab"
+msgstr "左邻标签"
+
+msgid "Liquid Glass inspired top bar: taller, translucent background, rounded bottom corners, roomier spacing and the clock on the right."
+msgstr "Liquid Glass 风格顶栏：更高、半透明背景、底部圆角、更宽松的间距，时钟靠右。"
+
+msgid "Lock Screen"
+msgstr "锁屏"
+
+msgid "Manual"
+msgstr "手动"
+
+msgid "Manual Tuning"
+msgstr "手动微调"
+
+msgid "Merge Includes Minimized Windows"
+msgstr "合并包含最小化窗口"
+
+msgid "Most Recently Active"
+msgstr "最近活跃"
+
+msgid "Move to New Window"
+msgstr "移到新窗口"
+
+msgid "Network Settings"
+msgstr "网络设置"
+
+msgid "Never"
+msgstr "永不"
+
+msgid "New Window Steals Focus on Joining"
+msgstr "新窗口入组时抢焦点"
+
+msgid "Not set (click 'Set' to record)"
+msgstr "未设置（点击「设置」录制）"
+
+msgid "Off"
+msgstr "关闭"
+
+msgid "Only for the active window"
+msgstr "仅针对活动窗口"
+
+msgid "Only hide when a window occupies the top bar area"
+msgstr "仅有窗口占据顶栏区域时才隐藏"
+
+msgid "Overview animation duration (seconds)"
+msgstr "总览动画时长（秒）"
+
+msgid "Panel Position"
+msgstr "面板位置"
+
+msgid "Panel Position Offset"
+msgstr "面板位置偏移"
+
+msgid "Pixels; 0 uses the system default"
+msgstr "像素，0 为系统默认"
+
+msgid "Pixels; 0 uses the system default. Smaller is more compact and can fix overly wide icons"
+msgstr "像素，0 为系统默认；越小越紧凑，可解决图标过宽"
+
+msgid "Position offset of the clock within its area"
+msgstr "时钟在同区域内的位置偏移"
+
+msgid "Press again to toggle show/hide"
+msgstr "再次按下时切换显示/隐藏"
+
+msgid "Press the key combination to use\nEsc to cancel · Backspace to clear"
+msgstr "请按下要使用的快捷键组合\nEsc 取消 · Backspace 清除"
+
+msgid "Pressure barrier (fallback trigger)"
+msgstr "压力屏障（备用触发）"
+
+msgid "Pressure threshold (pixels)"
+msgstr "压力阈值（像素）"
+
+msgid "Pressure timeout (ms)"
+msgstr "压力超时（毫秒）"
+
+msgid "Proxy"
+msgstr "代理"
+
+msgid "Proxy Switcher"
+msgstr "代理切换"
+
+msgid "Restore Groups on Login"
+msgstr "登录后恢复分组"
+
+msgid "Right"
+msgstr "右侧"
+
+msgid "Right Tab"
+msgstr "右邻标签"
+
+msgid "Set"
+msgstr "设置"
+
+msgid "Set Shortcut"
+msgstr "设置快捷键"
+
+msgid "Shortcut"
+msgstr "快捷键"
+
+msgid "Show Overview"
+msgstr "显示总览"
+
+msgid "Show Tab Bar"
+msgstr "显示标签栏"
+
+msgid "Show Tab Count in Panel"
+msgstr "顶栏显示标签计数"
+
+msgid "Show Top Bar Icon"
+msgstr "显示顶栏图标"
+
+msgid "Show Top Bar Shortcut"
+msgstr "显示顶栏快捷键"
+
+msgid "Show top bar in overview"
+msgstr "总览中显示顶栏"
+
+msgid "Show when the mouse approaches the screen edge"
+msgstr "鼠标靠近屏幕边缘时显示"
+
+msgid "Side Margin"
+msgstr "左右外边距"
+
+msgid "Spacing between status icons"
+msgstr "状态图标之间的间距"
+
+msgid "Spacing between status icons; 0 uses the system default"
+msgstr "状态图标之间的间距，0 为系统默认"
+
+msgid "Status Bar"
+msgstr "状态栏"
+
+msgid "Status icon size in pixels"
+msgstr "状态图标大小（像素）"
+
+msgid "System Settings"
+msgstr "系统设置"
+
+msgid "Tab Bar"
+msgstr "标签栏"
+
+msgid "Tab Bar Position"
+msgstr "标签栏位置"
+
+msgid "Tabbed Windows"
+msgstr "标签窗口"
+
+msgid "Tahoe menu bar is taller than the 24px default; 30px recommended"
+msgstr "Tahoe 菜单栏比默认的 24px 更高，建议 30px"
+
+msgid "Takes over the app's Ctrl+number shortcuts"
+msgstr "会抢占应用内的 Ctrl+数字快捷键"
+
+msgid "Tear-off Threshold (pixels)"
+msgstr "撕标签阈值（像素）"
+
+msgid "The Hide Top Bar module is controlled by the 'General → Features → Hide Top Bar' toggle."
+msgstr "隐藏顶栏模块受「通用 → 功能模块 → 隐藏顶栏」开关控制。"
+
+msgid "Used when the macOS Tahoe style is off; the status bar module is controlled by the General → Feature Modules → Status Bar switch."
+msgstr "macOS Tahoe 风格关闭时使用；状态栏模块受「通用 → 功能模块 → 状态栏」开关控制。"
+
+msgid "The top bar appears when the pointer pushes against the screen edge and accumulates to the threshold."
+msgstr "指针顶住屏幕上边缘、累积到阈值时显示顶栏。"
+
+msgid "The top bar appears when the pointer reaches the top edge of the screen"
+msgstr "指针到达屏幕上边缘即显示顶栏"
+
+msgid "Top Bar Height"
+msgstr "顶栏高度"
+
+msgid "Top Panel"
+msgstr "顶栏面板"
+
+msgid "Trigger"
+msgstr "触发"
+
+msgid "Trigger within this many pixels of the top edge; larger is more sensitive"
+msgstr "距顶边多少像素内触发，越大越灵敏"
+
+msgid "When enabled, the options below control the preset and the manual tuning is locked"
+msgstr "开启后下方选项控制该预设，手动调校项将被锁定"
+
+msgid "When new windows automatically join existing groups"
+msgstr "新窗口何时自动加入已有分组"
+
+msgid "When off, groups can span workspaces"
+msgstr "关闭后分组可跨工作区"
+
+msgid "When off, use shortcuts only"
+msgstr "关闭后仅用快捷键操作"
+
+msgid "macOS Tahoe Style"
+msgstr "macOS Tahoe 风格"
+
+msgid "macOS style top bar height/icon size/spacing and clock position"
+msgstr "macOS 风格、顶栏高度/图标尺寸/间距与时钟位置"
+
+msgid "macOS-style tabbed window management; disable the standalone Tabbed Windows extension"
+msgstr "macOS 风格标签页窗口管理，需停用独立的 Tabbed Windows 扩展"
+

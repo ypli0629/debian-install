@@ -1,0 +1,9 @@
+{
+    "uuid": "xbox",
+    "name": "Xbox",
+    "description": "All-in-one toolbox that gathers common system actions and custom utilities into the top panel.",
+    "gettext-domain": "xbox",
+    "shell-version": ["45", "46", "47", "48"],
+    "settings-schema": "org.gnome.shell.extensions.xbox",
+    "version": 1
+}

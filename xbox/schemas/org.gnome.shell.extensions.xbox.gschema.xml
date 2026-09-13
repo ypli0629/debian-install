@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.xbox"
+          path="/org/gnome/shell/extensions/xbox/">
+
+    <key name="show-panel-indicator" type="b">
+      <default>true</default>
+      <summary>在系统顶栏显示 Xbox 图标</summary>
+    </key>
+
+    <key name="panel-position" type="s">
+      <choices>
+        <choice value="left"/>
+        <choice value="center"/>
+        <choice value="right"/>
+      </choices>
+      <default>"right"</default>
+      <summary>顶栏图标所在区域</summary>
+    </key>
+
+    <key name="panel-offset" type="i">
+      <default>0</default>
+      <summary>顶栏图标在同区域内的位置偏移</summary>
+    </key>
+
+    <key name="status-bar-enabled" type="b">
+      <default>true</default>
+      <summary>启用状态栏模块</summary>
+    </key>
+
+    <key name="panel-icon-spacing" type="i">
+      <default>0</default>
+      <summary>顶栏状态图标间距（像素，0 为系统默认）</summary>
+    </key>
+
+    <key name="clock-position" type="s">
+      <choices>
+        <choice value="left"/>
+        <choice value="center"/>
+        <choice value="right"/>
+      </choices>
+      <default>"center"</default>
+      <summary>时钟（时间）在顶栏中的位置</summary>
+    </key>
+
+    <key name="clock-position-offset" type="i">
+      <default>0</default>
+      <summary>时钟在同区域内的位置偏移</summary>
+    </key>
+
+    <key name="panel-size" type="i">
+      <default>0</default>
+      <summary>顶栏高度（像素，0 为系统默认）</summary>
+    </key>
+
+    <key name="panel-icon-size" type="i">
+      <default>0</default>
+      <summary>顶栏图标大小（像素，0 为系统默认）</summary>
+    </key>
+
+    <key name="panel-button-padding-size" type="i">
+      <default>0</default>
+      <summary>面板按钮水平内边距（像素，0 为系统默认）</summary>
+    </key>
+
+    <key name="macos-style" type="b">
+      <default>false</default>
+      <summary>一键启用 macOS Tahoe 风格状态栏</summary>
+    </key>
+
+    <key name="macos-panel-size" type="i">
+      <default>30</default>
+      <summary>macOS Tahoe 风格顶栏高度（像素）</summary>
+    </key>
+
+    <key name="macos-icon-size" type="i">
+      <default>16</default>
+      <summary>macOS Tahoe 风格图标大小（像素）</summary>
+    </key>
+
+    <key name="macos-button-padding-size" type="i">
+      <default>8</default>
+      <summary>macOS Tahoe 风格按钮水平内边距（像素）</summary>
+    </key>
+
+    <key name="macos-icon-spacing" type="i">
+      <default>8</default>
+      <summary>macOS Tahoe 风格图标间距（像素）</summary>
+    </key>
+
+    <key name="macos-clock-position" type="s">
+      <choices>
+        <choice value="left"/>
+        <choice value="center"/>
+        <choice value="right"/>
+      </choices>
+      <default>"right"</default>
+      <summary>macOS Tahoe 风格时钟位置</summary>
+    </key>
+
+    <key name="macos-clock-offset" type="i">
+      <default>0</default>
+      <summary>macOS Tahoe 风格时钟在区域内偏移</summary>
+    </key>
+
+    <key name="macos-panel-opacity" type="i">
+      <default>60</default>
+      <summary>顶栏背景不透明度（0-100，100 为不透明）</summary>
+    </key>
+
+    <key name="macos-panel-radius" type="i">
+      <default>14</default>
+      <summary>顶栏底部圆角半径（像素，0 关闭）</summary>
+    </key>
+
+    <key name="macos-panel-margin" type="i">
+      <default>0</default>
+      <summary>顶栏左右外边距（像素，0 为贴边）</summary>
+    </key>
+
+    <key name="no-overview-enabled" type="b">
+      <default>true</default>
+      <summary>启动时不显示总览</summary>
+    </key>
+
+    <key name="proxy-switcher-enabled" type="b">
+      <default>true</default>
+      <summary>启用代理切换模块</summary>
+    </key>
+
+    <key name="active-mode" type="s">
+      <default>"auto"</default>
+      <summary>最近一次启用的代理模式，用于在关闭后一键恢复</summary>
+    </key>
+
+    <key name="hide-top-bar-enabled" type="b">
+      <default>true</default>
+      <summary>启用隐藏顶栏模块</summary>
+    </key>
+
+    <key name="mouse-sensitive" type="b">
+      <default>true</default>
+      <summary>鼠标靠近屏幕上边缘时显示顶栏</summary>
+    </key>
+
+    <key name="edge-trigger-size" type="i">
+      <default>3</default>
+      <summary>距离屏幕顶边多少像素内触发显示（越大越灵敏）</summary>
+    </key>
+
+    <key name="mouse-sensitive-fullscreen-window" type="b">
+      <default>true</default>
+      <summary>全屏时也允许鼠标触发显示顶栏</summary>
+    </key>
+
+    <key name="mouse-triggers-overview" type="b">
+      <default>false</default>
+      <summary>鼠标触发时同时显示总览</summary>
+    </key>
+
+    <key name="hot-corner" type="b">
+      <default>false</default>
+      <summary>隐藏顶栏时保留热区敏感</summary>
+    </key>
+
+    <key name="keep-round-corners" type="b">
+      <default>false</default>
+      <summary>隐藏顶栏时保留顶部圆角</summary>
+    </key>
+
+    <key name="animation-time-overview" type="d">
+      <default>0.4</default>
+      <summary>进入/离开总览时顶栏动画时长（秒）</summary>
+    </key>
+
+    <key name="animation-time-autohide" type="d">
+      <default>0.2</default>
+      <summary>鼠标触发时顶栏动画时长（秒）</summary>
+    </key>
+
+    <key name="pressure-threshold" type="i">
+      <default>100</default>
+      <summary>压力屏障阈值（像素）</summary>
+    </key>
+
+    <key name="pressure-timeout" type="i">
+      <default>1000</default>
+      <summary>压力屏障超时（毫秒）</summary>
+    </key>
+
+    <key name="shortcut-keybind" type="as">
+      <default>[]</default>
+      <summary>显示顶栏的快捷键</summary>
+    </key>
+
+    <key name="shortcut-delay" type="d">
+      <default>1.0</default>
+      <summary>快捷键触发后再次隐藏的延时（秒，0 表示不限）</summary>
+    </key>
+
+    <key name="shortcut-toggles" type="b">
+      <default>true</default>
+      <summary>再次按下快捷键时重新隐藏顶栏</summary>
+    </key>
+
+    <key name="enable-intellihide" type="b">
+      <default>true</default>
+      <summary>智能隐藏：仅有窗口占据顶栏空间时隐藏</summary>
+    </key>
+
+    <key name="enable-active-window" type="b">
+      <default>true</default>
+      <summary>智能隐藏仅针对活动窗口</summary>
+    </key>
+
+    <key name="show-in-overview" type="b">
+      <default>true</default>
+      <summary>总览中显示顶栏</summary>
+    </key>
+
+    <key name="tabbed-windows-enabled" type="b">
+      <default>true</default>
+      <summary>启用窗口聚合模块</summary>
+    </key>
+
+    <key name="group-toggle" type="as">
+      <default><![CDATA[['<Super>t']]]></default>
+      <summary>合并 / 取消合并当前应用的窗口</summary>
+    </key>
+
+    <key name="ungroup-current" type="as">
+      <default><![CDATA[['<Shift><Super>t']]]></default>
+      <summary>将当前窗口移出标签组</summary>
+    </key>
+
+    <key name="next-tab" type="as">
+      <default><![CDATA[['<Primary><Super>Right', '<Primary>Tab']]]></default>
+      <summary>切换到下一个标签</summary>
+    </key>
+
+    <key name="prev-tab" type="as">
+      <default><![CDATA[['<Primary><Super>Left', '<Primary><Shift>Tab']]]></default>
+      <summary>切换到上一个标签</summary>
+    </key>
+
+    <key name="switch-to-tab-1" type="as">
+      <default><![CDATA[['<Primary>1']]]></default>
+    </key>
+    <key name="switch-to-tab-2" type="as">
+      <default><![CDATA[['<Primary>2']]]></default>
+    </key>
+    <key name="switch-to-tab-3" type="as">
+      <default><![CDATA[['<Primary>3']]]></default>
+    </key>
+    <key name="switch-to-tab-4" type="as">
+      <default><![CDATA[['<Primary>4']]]></default>
+    </key>
+    <key name="switch-to-tab-5" type="as">
+      <default><![CDATA[['<Primary>5']]]></default>
+    </key>
+    <key name="switch-to-tab-6" type="as">
+      <default><![CDATA[['<Primary>6']]]></default>
+    </key>
+    <key name="switch-to-tab-7" type="as">
+      <default><![CDATA[['<Primary>7']]]></default>
+    </key>
+    <key name="switch-to-tab-8" type="as">
+      <default><![CDATA[['<Primary>8']]]></default>
+    </key>
+    <key name="switch-to-tab-9" type="as">
+      <default><![CDATA[['<Primary>9']]]></default>
+    </key>
+
+    <key name="saved-groups" type="as">
+      <default>[]</default>
+      <summary>持久化的标签组列表</summary>
+    </key>
+
+    <key name="allow-cross-app" type="b">
+      <default>false</default>
+      <summary>允许跨应用合并窗口</summary>
+    </key>
+
+    <key name="auto-merge" type="b">
+      <default>true</default>
+      <summary>同应用出现第二个窗口时自动聚合（无需快捷键）</summary>
+    </key>
+
+    <key name="auto-group-mode" type="s">
+      <choices>
+        <choice value="never"/>
+        <choice value="always"/>
+        <choice value="fullscreen-only"/>
+      </choices>
+      <default>"always"</default>
+      <summary>新窗口自动入组策略</summary>
+    </key>
+
+    <key name="group-exclude-apps" type="as">
+      <default>[]</default>
+      <summary>永不自动分组的 app id 列表</summary>
+    </key>
+
+    <key name="tab-bar-position" type="s">
+      <choices>
+        <choice value="top"/>
+        <choice value="bottom"/>
+        <choice value="panel"/>
+      </choices>
+      <default>"top"</default>
+      <summary>标签栏位置：窗口上方 / 窗口下方 / 顶栏内</summary>
+    </key>
+
+    <key name="show-tab-bar" type="b">
+      <default>true</default>
+      <summary>显示标签栏</summary>
+    </key>
+
+    <key name="switch-animation" type="b">
+      <default>false</default>
+      <summary>切换标签时淡入动画</summary>
+    </key>
+
+    <key name="number-keys-switch" type="b">
+      <default>false</default>
+      <summary>Ctrl+1..9 直达对应标签</summary>
+    </key>
+
+    <key name="close-activates-direction" type="s">
+      <choices>
+        <choice value="left"/>
+        <choice value="right"/>
+        <choice value="last-active"/>
+      </choices>
+      <default>"left"</default>
+      <summary>关闭标签后激活哪个标签</summary>
+    </key>
+
+    <key name="merge-includes-minimized" type="b">
+      <default>true</default>
+      <summary>合并时包含最小化窗口</summary>
+    </key>
+
+    <key name="new-tab-activates" type="b">
+      <default>true</default>
+      <summary>新窗口入组时抢焦点</summary>
+    </key>
+
+    <key name="restore-groups-on-login" type="b">
+      <default>true</default>
+      <summary>登录后恢复持久化的分组</summary>
+    </key>
+
+    <key name="tear-off-threshold" type="i">
+      <default>24</default>
+      <summary>拖出多少像素后撕标签</summary>
+    </key>
+
+    <key name="group-per-workspace" type="b">
+      <default>true</default>
+      <summary>分组限制在同一工作区</summary>
+    </key>
+
+    <key name="panel-indicator" type="b">
+      <default>false</default>
+      <summary>顶栏显示标签计数指示器</summary>
+    </key>
+
+    <key name="bar-auto-hide-ms" type="i">
+      <default>0</default>
+      <summary>标签栏自动隐藏延时（毫秒，0 关闭）</summary>
+    </key>
+
+  </schema>
+</schemalist>
