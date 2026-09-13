@@ -2,3 +2,4 @@
 *zip
 *.tar
 fcitx5-theme-mint
+scripts/btrfs-timeshift.sh
