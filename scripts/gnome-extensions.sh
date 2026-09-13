@@ -10,7 +10,7 @@ check_sudo
 
 # ── 依赖 ──────────────────────────────────────────────────
 log_section "安装依赖"
-sudo apt-get install -y unzip libglib2.0-bin
+sudo apt-get install -y unzip python3 libglib2.0-bin
 
 # ── 环境检查 ──────────────────────────────────────────────
 if ! command -v gnome-shell &>/dev/null; then
