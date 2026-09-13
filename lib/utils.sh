@@ -12,7 +12,7 @@ NC='\033[0m'
 log_section() { echo -e "\n${BOLD}${BLUE}══ $1 ══${NC}"; }
 log_info()    { echo -e "${YELLOW}  → $1${NC}"; }
 log_success() { echo -e "${GREEN}  ✓ $1${NC}"; }
-log_error()   { echo -e "${RED}  ✗ $1${NC}" >&2; [[ "${2:-}" == "fatal" ]] && exit 1; }
+log_error()   { echo -e "${RED}  ✗ $1${NC}" >&2; [[ "${2:-}" == "fatal" ]] && exit 1; return 0; }
 
 # ── sudo 预热 ─────────────────────────────────────────────
 check_sudo() {
