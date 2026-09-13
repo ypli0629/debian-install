@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/utils.sh"
 
 check_sudo
-progress_init 17
+progress_init 18
 
 # ── 系统更新 ──────────────────────────────────────────────
 log_section "系统更新"
@@ -174,6 +174,8 @@ progress_tick
 bash "$SCRIPT_DIR/scripts/fcitx.sh"    || record_failure "fcitx.sh"
 progress_tick
 bash "$SCRIPT_DIR/scripts/gnome.sh"    || record_failure "gnome.sh"
+progress_tick
+bash "$SCRIPT_DIR/scripts/gnome-extensions.sh" || record_failure "gnome-extensions.sh"
 progress_tick
 bash "$SCRIPT_DIR/scripts/theme.sh"    || record_failure "theme.sh"
 progress_tick

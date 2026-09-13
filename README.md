@@ -9,12 +9,14 @@ debian13-install/
 ├── install.sh          # 主入口
 ├── lib/
 │   └── utils.sh        # 公共工具函数（日志、git clone、zshrc 写入等）
+├── xbox/               # 自研 GNOME Shell 扩展（由 gnome-extensions.sh 安装）
 └── scripts/
     ├── kernel.sh       # 安装 Ubuntu Mainline 6.6 最新内核并设为默认引导
     ├── brew.sh         # Homebrew + 开发工具
     ├── fcitx.sh        # fcitx5 中文输入法
     ├── flatpak.sh      # Flatpak 应用
     ├── gnome.sh        # GNOME 快捷键配置
+    ├── gnome-extensions.sh # GNOME Shell 扩展安装（extensions.gnome.org + 本仓库 xbox）
     ├── theme.sh        # WhiteSur 主题
     └── zsh.sh          # oh-my-zsh + 插件 + 别名
 ```
