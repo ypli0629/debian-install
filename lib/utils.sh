@@ -25,12 +25,13 @@ check_sudo() {
     command -v wget &>/dev/null || _missing+=(wget)
     if [[ ${#_missing[@]} -gt 0 ]]; then
         log_info "安装基础工具：${_missing[*]}"
+        sudo apt-get update -qq || true   # 最小系统可能尚无 apt 索引
         sudo apt-get install -y "${_missing[@]}" -qq
     fi
-    # 保持 sudo 会话不过期
-    ( while true; do sudo -v; sleep 50; done ) &
+    # 保持 sudo 会话不过期（脱离终端，避免凭据过期时在后台尝试交互输入密码）
+    ( while true; do sudo -v; sleep 50; done ) </dev/null &>/dev/null &
     SUDO_KEEP_ALIVE_PID=$!
-    trap 'kill "$SUDO_KEEP_ALIVE_PID" 2>/dev/null' EXIT INT TERM
+    trap 'kill "$SUDO_KEEP_ALIVE_PID" 2>/dev/null' EXIT INT TERM HUP
 }
 
 # ── curl / wget 封装 ──────────────────────────────────────
@@ -50,12 +51,18 @@ gh_wget() {
 }
 
 # ── Git clone（已存在则跳过）──────────────────────────────
+# .git 可能是目录（普通 clone）或文件（worktree/submodule），故用 -e 判断。
 git_clone_or_skip() {
     local repo="$1"
     local dest="$2"
-    if [[ -d "$dest/.git" ]]; then
+    if [[ -e "$dest/.git" ]]; then
         log_info "已存在，跳过：$dest"
         return 0
+    fi
+    # 残留的半成品目录（非空且非 git 仓库）会导致 git clone 失败，明确报错而非静默卡死
+    if [[ -d "$dest" && -n "$(ls -A "$dest" 2>/dev/null)" ]]; then
+        log_error "目标目录已存在且非 git 仓库，跳过克隆：$dest（请手动检查或删除后重试）"
+        return 1
     fi
     git clone "$repo" "$dest"
 }
@@ -122,11 +129,23 @@ print_report() {
     echo ""
     if [[ ${#FAILED_STEPS[@]} -eq 0 ]]; then
         log_success "全部步骤执行完成！"
+        return 0
     else
         echo -e "${RED}${BOLD}══ 安装报告：以下步骤失败，请手动处理 ══${NC}"
         for step in "${FAILED_STEPS[@]}"; do
             echo -e "${RED}  ✗ ${step}${NC}"
         done
         echo ""
+        return 1
     fi
+}
+
+# ── 子脚本收尾：有失败项则返回非零，供父脚本用退出码汇总 ──────
+# 用法：放在子脚本末尾，`finish || exit 1`。
+finish() {
+    if [[ ${#FAILED_STEPS[@]} -gt 0 ]]; then
+        log_error "本脚本有 ${#FAILED_STEPS[@]} 项失败"
+        return 1
+    fi
+    return 0
 }

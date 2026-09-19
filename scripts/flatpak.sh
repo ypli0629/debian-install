@@ -26,8 +26,11 @@ packages=(
 )
 
 log_info "批量安装 ${#packages[@]} 个包..."
-if flatpak install flathub -y --noninteractive "${packages[@]}"; then
+# 与 install.sh 添加的 --user remote 保持一致，安装到用户级 flathub
+if flatpak install --user flathub -y --noninteractive "${packages[@]}"; then
     log_success "Flatpak 安装完成"
 else
-    log_error "部分 Flatpak 包安装失败，请手动重试"
+    record_failure "flatpak.sh" "部分包安装失败"
 fi
+
+finish || exit 1

@@ -19,58 +19,61 @@ NVIDIA_RUN_PATH="${NVIDIA_CACHE_DIR}/${NVIDIA_RUN}"
 # ── 检查是否已安装 ──────────────────────────────────────
 log_section "NVIDIA 驱动（官方 .run 安装包）"
 
+NEED_INSTALL=1
 if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
     INSTALLED_VER=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1)
     if [[ "$INSTALLED_VER" == "$NVIDIA_VERSION" ]]; then
-        log_info "NVIDIA 驱动 ${NVIDIA_VERSION} 已安装，跳过"
-        exit 0
+        NEED_INSTALL=0
+        log_info "NVIDIA 驱动 ${NVIDIA_VERSION} 已安装，跳过安装"
     else
         log_info "当前版本 ${INSTALLED_VER:-未知}，将升级到 ${NVIDIA_VERSION}"
     fi
 fi
 
-# ── 安装编译依赖 ────────────────────────────────────────
-log_section "安装编译依赖"
-if apt-cache show "linux-headers-$(uname -r)" &>/dev/null; then
-    sudo apt install -y gcc make dkms "linux-headers-$(uname -r)"
-else
-    log_info "linux-headers-$(uname -r) 不在 apt 仓库中，跳过（内核已内置头文件）"
-    sudo apt install -y gcc make dkms
-fi
-log_success "编译依赖就绪"
-
-# ── 下载 ────────────────────────────────────────────────
-log_section "下载 NVIDIA 驱动"
-mkdir -p "$NVIDIA_CACHE_DIR"
-if [[ -f "$NVIDIA_RUN_PATH" ]]; then
-    FILE_SIZE=$(stat -c%s "$NVIDIA_RUN_PATH" 2>/dev/null || echo 0)
-    if [[ "$FILE_SIZE" -lt 104857600 ]]; then
-        log_info "缓存文件不完整（$(( FILE_SIZE / 1024 / 1024 ))MB），重新下载"
-        rm -f "$NVIDIA_RUN_PATH"
+if [[ "$NEED_INSTALL" -eq 1 ]]; then
+    # ── 安装编译依赖 ────────────────────────────────────
+    log_section "安装编译依赖"
+    if apt-cache show "linux-headers-$(uname -r)" &>/dev/null; then
+        sudo apt install -y gcc make dkms "linux-headers-$(uname -r)"
     else
-        log_info "已存在 ${NVIDIA_RUN_PATH}，跳过下载"
+        log_info "linux-headers-$(uname -r) 不在 apt 仓库中，跳过（内核已内置头文件）"
+        sudo apt install -y gcc make dkms
     fi
-fi
-if [[ ! -f "$NVIDIA_RUN_PATH" ]]; then
-    # 验证 URL 可达，避免版本号有误时浪费时间
-    if ! curl -fsSI --connect-timeout 15 "$NVIDIA_URL" -o /dev/null 2>/dev/null; then
-        log_error "NVIDIA ${NVIDIA_VERSION} 下载地址不可达，版本号可能有误：${NVIDIA_URL}" fatal
+    log_success "编译依赖就绪"
+
+    # ── 下载 ────────────────────────────────────────────
+    log_section "下载 NVIDIA 驱动"
+    mkdir -p "$NVIDIA_CACHE_DIR"
+    if [[ -f "$NVIDIA_RUN_PATH" ]]; then
+        FILE_SIZE=$(stat -c%s "$NVIDIA_RUN_PATH" 2>/dev/null || echo 0)
+        if [[ "$FILE_SIZE" -lt 104857600 ]]; then
+            log_info "缓存文件不完整（$(( FILE_SIZE / 1024 / 1024 ))MB），重新下载"
+            rm -f "$NVIDIA_RUN_PATH"
+        else
+            log_info "已存在 ${NVIDIA_RUN_PATH}，跳过下载"
+        fi
     fi
-    gh_wget "$NVIDIA_URL" "$NVIDIA_RUN_PATH"
-    log_success "下载完成"
+    if [[ ! -f "$NVIDIA_RUN_PATH" ]]; then
+        # 验证 URL 可达，避免版本号有误时浪费时间
+        if ! curl -fsSI --connect-timeout 15 "$NVIDIA_URL" -o /dev/null 2>/dev/null; then
+            log_error "NVIDIA ${NVIDIA_VERSION} 下载地址不可达，版本号可能有误：${NVIDIA_URL}" fatal
+        fi
+        gh_wget "$NVIDIA_URL" "$NVIDIA_RUN_PATH"
+        log_success "下载完成"
+    fi
+    chmod +x "$NVIDIA_RUN_PATH"
+
+    # ── 手动安装提示 ────────────────────────────────────
+    log_section "手动安装 NVIDIA 驱动"
+    log_info "请在 tty 终端（Ctrl+Alt+F2）中执行以下命令："
+    log_info "  sudo systemctl stop display-manager"
+    log_info "  sudo ${NVIDIA_RUN_PATH} --dkms"
+    log_info "  sudo systemctl start display-manager"
+    log_info "  sudo ln -sf /dev/null /etc/udev/rules.d/61-gdm.rules"
+    log_info "安装完成后重新运行本脚本以配置 Wayland 支持"
 fi
-chmod +x "$NVIDIA_RUN_PATH"
 
-# ── 手动安装提示 ──────────────────────────────────────
-log_section "手动安装 NVIDIA 驱动"
-log_info "请在 tty 终端（Ctrl+Alt+F2）中执行以下命令："
-log_info "  sudo systemctl stop display-manager"
-log_info "  sudo ${NVIDIA_RUN_PATH} --dkms"
-log_info "  sudo systemctl start display-manager"
-log_info "  sudo ln -sf /dev/null /etc/udev/rules.d/61-gdm.rules"
-log_info "安装完成后重新运行本脚本以配置 Wayland 支持"
-
-# 未安装驱动时跳过后续 Wayland 配置
+# 未安装驱动时跳过后续 Wayland 配置（保持原语义）
 if ! command -v nvidia-smi &>/dev/null || ! nvidia-smi &>/dev/null; then
     exit 0
 fi
@@ -80,13 +83,21 @@ fi
 #       https://us.download.nvidia.com/XFree86/Linux-x86_64/580.126.09/README/gbm.html
 log_section "配置 Wayland 支持"
 
-# 1. 开启 DRM KMS（Wayland 必需，NVIDIA 默认关闭）
-echo "options nvidia-drm modeset=1" | sudo tee /etc/modprobe.d/nvidia-drm.conf > /dev/null
-log_success "已启用 nvidia-drm modeset=1"
+# 1. 开启 DRM KMS（Wayland 必需，NVIDIA 默认关闭；幂等）
+if sudo grep -q 'modeset=1' /etc/modprobe.d/nvidia-drm.conf 2>/dev/null; then
+    log_info "nvidia-drm modeset=1 已配置，跳过"
+else
+    echo "options nvidia-drm modeset=1" | sudo tee /etc/modprobe.d/nvidia-drm.conf > /dev/null
+    log_success "已启用 nvidia-drm modeset=1"
+fi
 
-# 2. 解除 GDM 对 NVIDIA + Wayland 的封锁（Debian/GNOME 默认禁用）
-sudo ln -sf /dev/null /etc/udev/rules.d/61-gdm.rules
-log_success "已覆盖 GDM udev 规则，允许 Wayland 登录"
+# 2. 解除 GDM 对 NVIDIA + Wayland 的封锁（Debian/GNOME 默认禁用；幂等）
+if [[ -L /etc/udev/rules.d/61-gdm.rules && "$(sudo stat -c '%N' /etc/udev/rules.d/61-gdm.rules 2>/dev/null)" == *"/dev/null"* ]]; then
+    log_info "61-gdm.rules 已指向 /dev/null，跳过"
+else
+    sudo ln -sf /dev/null /etc/udev/rules.d/61-gdm.rules
+    log_success "已覆盖 GDM udev 规则，允许 Wayland 登录"
+fi
 
 # 3. egl-wayland 已由 .run 安装器内置，无需 apt 安装（apt 版本会覆盖 .run 安装的文件导致 Wayland 黑屏）
 
@@ -95,3 +106,5 @@ sudo update-initramfs -u -k all
 log_success "initramfs 已更新"
 
 log_success "完成，请重启系统以加载驱动并启用 Wayland"
+
+finish || exit 1

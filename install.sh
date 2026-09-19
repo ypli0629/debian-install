@@ -17,12 +17,13 @@ progress_init 18
 
 # ── 系统更新 ──────────────────────────────────────────────
 log_section "系统更新"
-sudo apt update
-sudo apt upgrade -y && sudo apt dist-upgrade -y
+sudo apt update || record_failure "apt update"
+sudo apt upgrade -y || record_failure "apt upgrade"
+sudo apt dist-upgrade -y || record_failure "apt dist-upgrade"
 sudo apt install -y zsh git curl wget ca-certificates flatpak gnome-software-plugin-flatpak \
     build-essential cmake pkg-config \
     fonts-noto-cjk fonts-noto-cjk-extra \
-    default-jdk ncurses-bin
+    default-jdk ncurses-bin || record_failure "基础软件包安装"
 progress_tick
 
 # ── 目录 ─────────────────────────────────────────────────
@@ -53,13 +54,24 @@ if [[ -z "$(git config --global user.email 2>/dev/null)" ]]; then
 else
     log_info "Git 全局账户已配置（$(git config --global user.name) / $(git config --global user.email)），跳过"
 fi
-git config --global credential.helper store
+if [[ -z "$(git config --global --get credential.helper 2>/dev/null)" ]]; then
+    log_info "将以明文保存凭据到 ~/.git-credentials"
+    git config --global credential.helper store
+else
+    log_info "credential.helper 已设置，跳过"
+fi
 progress_tick
 
 # ── Flatpak 源 ────────────────────────────────────────────
 log_section "Flatpak 初始化"
-flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo --user
-flatpak remote-modify flathub --url=https://mirrors.ustc.edu.cn/flathub --user
+if [[ -z "$(flatpak remotes --user 2>/dev/null | awk '$1 == "flathub" { print $1 }')" ]]; then
+    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo --user \
+        || record_failure "Flatpak 源配置"
+    flatpak remote-modify flathub --url=https://mirrors.ustc.edu.cn/flathub --user \
+        || record_failure "Flatpak 源配置"
+else
+    log_info "flathub 源已存在，保留用户设置，跳过"
+fi
 progress_tick
 
 # ── AstroNvim ────────────────────────────────────────────
@@ -73,16 +85,22 @@ log_section "Docker Engine"
 if dpkg-query -W -f='${Status}' docker-ce 2>/dev/null | grep -q "install ok installed"; then
     log_info "Docker Engine 已安装，跳过"
 else
-    sudo install -m 0755 -d /etc/apt/keyrings
-    sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-    sudo chmod a+r /etc/apt/keyrings/docker.asc
-    echo \
-        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+    if {
+        sudo install -m 0755 -d /etc/apt/keyrings &&
+        sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc &&
+        sudo chmod a+r /etc/apt/keyrings/docker.asc &&
+        echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
     $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
-        | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    sudo apt-get update
-    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    sudo usermod -aG docker "$USER"
+            | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null &&
+        sudo apt-get update &&
+        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    }; then
+        sudo usermod -aG docker "$USER"
+        log_success "Docker Engine 安装完成"
+    else
+        record_failure "Docker Engine" "安装失败"
+    fi
 fi
 progress_tick
 
@@ -140,19 +158,23 @@ TOOLBOX_BIN="$HOME/.local/bin/jetbrains-toolbox"
 if [[ -x "$TOOLBOX_BIN" ]]; then
     log_info "JetBrains Toolbox 已安装，跳过"
 else
-    TOOLBOX_URL=$(curl -fsSL \
+    TOOLBOX_URL="$(curl -fsSL --retry 3 \
         "https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release" \
         | grep -oE 'https://download\.jetbrains\.com/toolbox/jetbrains-toolbox-[^"]+\.tar\.gz' \
-        | head -1) || TOOLBOX_URL=""
+        | head -1 || true)"
     if [[ -n "$TOOLBOX_URL" ]]; then
         if wget --timeout=60 -q -O /tmp/jetbrains-toolbox.tar.gz "$TOOLBOX_URL"; then
             mkdir -p "$HOME/.local/bin"
             tar -xzf /tmp/jetbrains-toolbox.tar.gz -C /tmp/
             find /tmp -maxdepth 2 -name "jetbrains-toolbox" -type f \
                 | head -1 | xargs -I{} mv {} "$TOOLBOX_BIN"
-            chmod +x "$TOOLBOX_BIN"
+            chmod +x "$TOOLBOX_BIN" 2>/dev/null || true
             rm -f /tmp/jetbrains-toolbox.tar.gz
-            log_success "JetBrains Toolbox 已安装至 $TOOLBOX_BIN，首次运行请在桌面环境执行"
+            if [[ -x "$TOOLBOX_BIN" ]]; then
+                log_success "JetBrains Toolbox 已安装至 $TOOLBOX_BIN，首次运行请在桌面环境执行"
+            else
+                record_failure "JetBrains Toolbox" "解压/安装失败"
+            fi
         else
             record_failure "JetBrains Toolbox" "下载失败"
         fi
@@ -184,7 +206,9 @@ progress_tick
 
 # ── 安装报告 ──────────────────────────────────────────────
 log_section "安装报告"
-print_report
+if ! print_report; then
+    exit 1
+fi
 log_success "完成！请重启系统以使所有配置生效。"
 echo ""
 log_info "后续手动步骤："

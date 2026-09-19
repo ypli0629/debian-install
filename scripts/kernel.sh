@@ -7,19 +7,16 @@ check_sudo
 GRUB_CFG="/boot/grub/grub.cfg"
 GRUB_DEFAULT_FILE="/etc/default/grub"
 
-# ── 探测 kernel.ubuntu.com 可用协议 ───────────────────────
-# 部分 Debian 环境下 CA 证书不信任 Canonical，TLS 握手失败，回退 HTTP
-if curl -fsSL --connect-timeout 10 "https://kernel.ubuntu.com/mainline/" -o /dev/null 2>/dev/null; then
-    MAINLINE_BASE="https://kernel.ubuntu.com/mainline"
-else
-    log_info "HTTPS 连接 kernel.ubuntu.com 失败，回退使用 HTTP"
-    MAINLINE_BASE="http://kernel.ubuntu.com/mainline"
+# ── kernel.ubuntu.com 固定使用 HTTPS（禁止明文 HTTP 下载内核）──
+MAINLINE_BASE="https://kernel.ubuntu.com/mainline"
+if ! curl -fsSL --retry 3 --retry-delay 2 --connect-timeout 10 "${MAINLINE_BASE}/" -o /dev/null 2>/dev/null; then
+    log_error "HTTPS 连接 kernel.ubuntu.com 失败，请安装/修复 ca-certificates 或检查代理，禁止使用明文 HTTP 下载内核" fatal
 fi
 
 # ── 查找最新 6.6.x mainline 版本 ─────────────────────────
 log_section "查找 Ubuntu Mainline 6.6 最新版本"
 
-LATEST_TAG=$(curl -fsSL "${MAINLINE_BASE}/" \
+LATEST_TAG=$(curl -fsSL --retry 3 --retry-delay 2 "${MAINLINE_BASE}/" \
     | grep -oE 'v6\.6\.[0-9]+/' \
     | grep -v '\-rc' \
     | sort -V | tail -1 | tr -d '/')
@@ -43,7 +40,7 @@ else
     # ── 获取 .deb 文件列表 ────────────────────────────────────
     log_section "获取安装包列表"
 
-    PKG_HTML=$(curl -fsSL "$PKG_PAGE_URL")
+    PKG_HTML=$(curl -fsSL --retry 3 --retry-delay 2 "$PKG_PAGE_URL")
 
     # 需要的四个包：all headers、amd64 headers、modules、image-unsigned
     mapfile -t DEB_FILES < <(echo "$PKG_HTML" \
@@ -65,8 +62,23 @@ else
 
     for deb in "${DEB_FILES[@]}"; do
         log_info "下载：$deb"
-        curl -fsSL --progress-bar "${PKG_PAGE_URL}${deb}" -o "${TMP_DIR}/${deb}"
+        curl -fsSL --retry 3 --retry-delay 2 --progress-bar "${PKG_PAGE_URL}${deb}" -o "${TMP_DIR}/${deb}"
     done
+
+    # ── 完整性校验（SHA256）──────────────────────────────────
+    # CHECKSUMS 同时包含 Checksums-Sha1 与 Checksums-Sha256 两段，文件名相同，
+    # 故只提取 64 位十六进制摘要行，避免把 SHA1 行喂给 sha256sum 导致误报失败。
+    if curl -fsSL --retry 3 --retry-delay 2 "${PKG_PAGE_URL}CHECKSUMS" -o "${TMP_DIR}/CHECKSUMS" 2>/dev/null; then
+        log_info "校验安装包完整性（SHA256）"
+        for deb in "${DEB_FILES[@]}"; do
+            if ! (cd "$TMP_DIR" && grep -E "^[0-9a-f]{64}  ${deb}\$" CHECKSUMS | sha256sum -c -); then
+                log_error "安装包校验失败：$deb" fatal
+            fi
+        done
+        log_success "所有安装包校验通过"
+    else
+        log_info "未找到 CHECKSUMS，跳过完整性校验"
+    fi
 
     # ── 安装 ─────────────────────────────────────────────────
     log_section "安装内核"
@@ -100,7 +112,7 @@ log_info "安装的内核版本：$KERNEL_VER"
 
 # ── 生成 grub.cfg ─────────────────────────────────────────
 log_section "生成 GRUB 配置"
-sudo update-grub 2>/dev/null
+sudo update-grub || record_failure "kernel.sh" "update-grub 失败"
 
 # ── 读取子菜单标题并验证入口 ──────────────────────────────
 # 动态查找包含该内核版本的 menuentry 标题（兼容单/双引号，排除 recovery 条目）
@@ -124,18 +136,27 @@ else
 fi
 log_info "GRUB_DEFAULT → $GRUB_DEFAULT_VAL"
 
-# ── 写入 /etc/default/grub ────────────────────────────────
-log_section "配置 /etc/default/grub"
-sudo cp "$GRUB_DEFAULT_FILE" "${GRUB_DEFAULT_FILE}.bak"
-sudo sed -i "s|^GRUB_DEFAULT=.*|GRUB_DEFAULT=\"${GRUB_DEFAULT_VAL}\"|" "$GRUB_DEFAULT_FILE"
-sudo sed -i 's|^GRUB_SAVEDEFAULT=.*|# GRUB_SAVEDEFAULT=|' "$GRUB_DEFAULT_FILE"
-sudo update-grub 2>/dev/null
-log_success "GRUB 已更新，默认引导 Linux ${KERNEL_VER}"
+# ── Secure Boot 防护 ──────────────────────────────────────
+# 检测到 Secure Boot 已启用时，不能把默认引导 pin 到未签名 mainline 内核，
+# 否则重启后可能无法引导；此时仅安装/锁定内核，跳过 GRUB_DEFAULT 与钩子。
+SECURE_BOOT_ENABLED=0
+if command -v mokutil &>/dev/null && mokutil --sb-state 2>/dev/null | grep -qi enabled; then
+    SECURE_BOOT_ENABLED=1
+fi
 
-# ── 安装后钩子：重新运行脚本后自动更新 GRUB_DEFAULT ───────
-log_section "添加内核安装后钩子"
+if [[ "$SECURE_BOOT_ENABLED" -eq 0 ]]; then
+    # ── 写入 /etc/default/grub ────────────────────────────
+    log_section "配置 /etc/default/grub"
+    sudo cp "$GRUB_DEFAULT_FILE" "${GRUB_DEFAULT_FILE}.bak"
+    sudo sed -i "s|^GRUB_DEFAULT=.*|GRUB_DEFAULT=\"${GRUB_DEFAULT_VAL}\"|" "$GRUB_DEFAULT_FILE"
+    sudo sed -i 's|^GRUB_SAVEDEFAULT=.*|# GRUB_SAVEDEFAULT=|' "$GRUB_DEFAULT_FILE"
+    sudo update-grub || record_failure "kernel.sh" "update-grub 失败"
+    log_success "GRUB 已更新，默认引导 Linux ${KERNEL_VER}"
 
-sudo tee /etc/kernel/postinst.d/zz-prefer-mainline-66-kernel > /dev/null <<'HOOK'
+    # ── 安装后钩子：重新运行脚本后自动更新 GRUB_DEFAULT ───
+    log_section "添加内核安装后钩子"
+
+    sudo tee /etc/kernel/postinst.d/zz-prefer-mainline-66-kernel > /dev/null <<'HOOK'
 #!/bin/bash
 # 当新的 6.6.x mainline 内核安装时，自动更新 GRUB_DEFAULT
 KERNEL_VERSION="$1"
@@ -145,7 +166,7 @@ GRUB_CFG="/boot/grub/grub.cfg"
 # mainline 格式：6.6.x-06066x-generic
 [[ "$KERNEL_VERSION" != 6.6.*-*-generic ]] && exit 0
 
-update-grub 2>/dev/null
+update-grub || { logger -t prefer-mainline-kernel "update-grub failed" || true; exit 1; }
 
 # 动态查找 menuentry 标题（兼容单/双引号，排除 recovery）
 ENTRY_TITLE=$(grep "menuentry .*${KERNEL_VERSION}" "$GRUB_CFG" \
@@ -164,10 +185,20 @@ else
 fi
 
 sed -i "s|^GRUB_DEFAULT=.*|GRUB_DEFAULT=\"${GRUB_DEFAULT_VAL}\"|" "$GRUB_DEFAULT_FILE"
-update-grub 2>/dev/null
+update-grub || { logger -t prefer-mainline-kernel "update-grub failed" || true; exit 1; }
 HOOK
 
-sudo chmod +x /etc/kernel/postinst.d/zz-prefer-mainline-66-kernel
-log_success "已添加 /etc/kernel/postinst.d/zz-prefer-mainline-66-kernel"
+    sudo chmod +x /etc/kernel/postinst.d/zz-prefer-mainline-66-kernel
+    log_success "已添加 /etc/kernel/postinst.d/zz-prefer-mainline-66-kernel"
+else
+    record_failure "Secure Boot" "检测到 Secure Boot 已启用，未将默认引导指向未签名内核；请对模块签名或关闭 Secure Boot 后重跑"
+    log_error "检测到 Secure Boot 已启用：已安装内核但未修改 GRUB_DEFAULT、未添加 postinst 钩子；请对模块签名或关闭 Secure Boot 后重跑"
+fi
 
-log_success "完成，重启后将使用 Linux ${KERNEL_VER}（Ubuntu Mainline）"
+if [[ "$SECURE_BOOT_ENABLED" -eq 0 ]]; then
+    log_success "完成，重启后将使用 Linux ${KERNEL_VER}（Ubuntu Mainline）"
+else
+    log_error "完成（受限）：内核已安装，但 Secure Boot 已启用，未切换默认引导，重启仍使用原内核"
+fi
+
+finish || exit 1

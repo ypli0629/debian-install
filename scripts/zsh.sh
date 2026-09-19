@@ -6,28 +6,57 @@ check_sudo
 
 log_section "oh-my-zsh"
 
-if [[ -d "$HOME/.oh-my-zsh" ]]; then
+# 就绪标志：oh-my-zsh.sh 存在才算安装成功
+OMZ_READY=0
+if [[ -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]]; then
     log_info "oh-my-zsh 已安装，跳过"
+    OMZ_READY=1
 else
-    sh -c "$(gh_curl https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    # 先下载到临时文件，校验非空后再执行，避免下载失败时执行空脚本
+    OMZ_INSTALLER="$(mktemp)"
+    if [[ -n "$OMZ_INSTALLER" ]] \
+        && gh_wget "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" "$OMZ_INSTALLER" \
+        && [[ -s "$OMZ_INSTALLER" ]]; then
+        if sh "$OMZ_INSTALLER" "" --unattended </dev/null; then
+            if [[ -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]]; then
+                OMZ_READY=1
+                log_success "oh-my-zsh 安装完成"
+            else
+                record_failure "oh-my-zsh" "执行安装脚本后未找到 oh-my-zsh.sh"
+            fi
+        else
+            record_failure "oh-my-zsh" "安装脚本执行失败"
+        fi
+    else
+        record_failure "oh-my-zsh" "下载安装脚本失败或文件为空"
+    fi
+    if [[ -n "${OMZ_INSTALLER:-}" ]]; then
+        rm -f "$OMZ_INSTALLER"
+    fi
 fi
 
-# --unattended 不会自动 chsh，需手动切换默认 shell
-ZSH_BIN="$(command -v zsh 2>/dev/null || echo "")"
-if [[ -n "$ZSH_BIN" && "$SHELL" != "$ZSH_BIN" ]]; then
-    # 确保 zsh 在 /etc/shells 中
-    grep -qF "$ZSH_BIN" /etc/shells || echo "$ZSH_BIN" | sudo tee -a /etc/shells > /dev/null
-    sudo chsh -s "$ZSH_BIN" "$USER"
-    log_success "默认 Shell 已切换为 $ZSH_BIN"
+# --unattended 不会自动 chsh，仅当 oh-my-zsh 就绪时才切换默认 shell
+if [[ $OMZ_READY -eq 1 ]]; then
+    ZSH_BIN="$(command -v zsh 2>/dev/null || echo "")"
+    if [[ -n "$ZSH_BIN" && "$SHELL" != "$ZSH_BIN" ]]; then
+        # 确保 zsh 在 /etc/shells 中
+        grep -qF "$ZSH_BIN" /etc/shells || echo "$ZSH_BIN" | sudo tee -a /etc/shells > /dev/null
+        sudo chsh -s "$ZSH_BIN" "$USER"
+        log_success "默认 Shell 已切换为 $ZSH_BIN"
+    else
+        log_info "默认 Shell 已是 zsh，跳过"
+    fi
 else
-    log_info "默认 Shell 已是 zsh，跳过"
+    log_info "oh-my-zsh 未就绪，跳过默认 Shell 切换"
 fi
 
 log_section "zsh 插件"
 git_clone_or_skip https://github.com/zsh-users/zsh-autosuggestions \
-    "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
+    "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" \
+    || record_failure "zsh-autosuggestions" "克隆失败或目标目录非 git 仓库"
 git_clone_or_skip https://github.com/zsh-users/zsh-syntax-highlighting \
-    "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
+    "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting" \
+    || record_failure "zsh-syntax-highlighting" "克隆失败或目标目录非 git 仓库"
 
 # 将插件加入 plugins=() 列表（幂等，兼容单行和多行写法）
 for plugin in zsh-autosuggestions zsh-syntax-highlighting; do
@@ -63,3 +92,4 @@ EOF
 )"
 
 log_success "zsh 完成"
+finish || exit 1

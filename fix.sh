@@ -15,10 +15,13 @@ check_sudo
 # ── brew PATH ────────────────────────────────────────────────────────────────
 log_section "修复 brew PATH（/etc/environment.d → /etc/profile.d）"
 
-BREW_BIN="/home/linuxbrew/.linuxbrew/bin/brew"
+BREW_BIN="$(command -v brew 2>/dev/null || true)"
+if [[ -z "$BREW_BIN" ]]; then
+    BREW_BIN="/home/linuxbrew/.linuxbrew/bin/brew"
+fi
 
 if [[ ! -x "$BREW_BIN" ]]; then
-    log_info "未检测到 brew，跳过 brew 修复"
+    log_info "未找到 brew，跳过 brew 修复"
 else
     # 1. 清理旧文件
     if [[ -f /etc/environment.d/brew.conf ]]; then
@@ -49,7 +52,7 @@ fi
 # ── fcitx5 IM 变量 ───────────────────────────────────────────────────────────
 log_section "修复 fcitx5 环境变量（/etc/environment.d → /etc/environment）"
 
-if ! dpkg-query -W fcitx5 2>/dev/null | grep -qv '^$'; then
+if ! dpkg-query -W -f='${Status}' fcitx5 2>/dev/null | grep -q "install ok installed"; then
     log_info "未检测到 fcitx5，跳过 fcitx5 修复"
 else
     # 1. 清理旧文件

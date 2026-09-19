@@ -62,16 +62,37 @@ install_egon_extension() {
         return 1
     fi
 
-    local tmp_zip="/tmp/gnome-ext-${uuid}.zip"
-    if gh_wget "https://extensions.gnome.org${url}" "$tmp_zip"; then
-        mkdir -p "$dest"
-        unzip -q -o "$tmp_zip" -d "$dest"
-        rm -f "$tmp_zip"
-        log_success "已安装：$uuid"
-    else
+    # 先解压到临时目录并校验，再原子替换目标目录，避免失败留下半成品被误判为已安装
+    local tmp_zip tmp_dir
+    tmp_zip="$(mktemp)" || { log_error "创建临时文件失败：$uuid"; return 1; }
+    if ! gh_wget "https://extensions.gnome.org${url}" "$tmp_zip"; then
         log_error "下载失败：$uuid"
+        rm -f "$tmp_zip"
         return 1
     fi
+
+    tmp_dir="$(mktemp -d)" || { log_error "创建临时目录失败：$uuid"; rm -f "$tmp_zip"; return 1; }
+    if ! unzip -q -o "$tmp_zip" -d "$tmp_dir"; then
+        log_error "解压失败：$uuid"
+        rm -f "$tmp_zip"
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+    rm -f "$tmp_zip"
+
+    if [[ ! -f "$tmp_dir/metadata.json" ]]; then
+        log_error "解压内容缺少 metadata.json：$uuid"
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+
+    rm -rf "$dest"
+    if ! mv "$tmp_dir" "$dest"; then
+        log_error "安装到目标目录失败：$uuid"
+        rm -rf "$tmp_dir" "$dest"
+        return 1
+    fi
+    log_success "已安装：$uuid"
 }
 
 log_section "安装 extensions.gnome.org 扩展（GNOME ${SHELL_VERSION}）"
@@ -94,7 +115,8 @@ fi
 log_section "启用扩展"
 if gsettings list-schemas &>/dev/null 2>&1; then
     for uuid in "${EXTENSIONS[@]}" xbox; do
-        gnome-extensions enable "$uuid" 2>/dev/null || true
+        gnome-extensions enable "$uuid" 2>/dev/null \
+            || log_info "暂无法启用（新装扩展需注销重登后生效）：$uuid"
     done
     log_info "已尝试启用扩展（新安装的扩展需注销重登后生效）"
 else
@@ -102,3 +124,4 @@ else
 fi
 
 log_success "GNOME 扩展安装完成"
+finish || exit 1

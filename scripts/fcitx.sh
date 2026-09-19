@@ -22,18 +22,26 @@ done
 unset _var _key
 
 log_section "oh-my-rime 配置"
-git_clone_or_skip https://github.com/Mintimate/oh-my-rime "$HOME/.local/share/fcitx5/rime"
+git_clone_or_skip https://github.com/Mintimate/oh-my-rime "$HOME/.local/share/fcitx5/rime" \
+    || record_failure "oh-my-rime 配置" "克隆失败或目标目录非 git 仓库"
 
 log_section "fcitx5 mint 主题"
 MINT_SRC="$HOME/.local/share/themes-src/fcitx5-theme-mint"
 mkdir -p "$HOME/.local/share/themes-src"
-git_clone_or_skip https://github.com/witt-bit/fcitx5-theme-mint.git "$MINT_SRC"
+git_clone_or_skip https://github.com/witt-bit/fcitx5-theme-mint.git "$MINT_SRC" \
+    || record_failure "fcitx5 mint 主题" "克隆失败或目标目录非 git 仓库"
 # 检查主题是否已安装（安装到 ~/.local/share/fcitx5/themes/）
 if ls -d "$HOME/.local/share/fcitx5/themes/Mint"* &>/dev/null 2>&1; then
     log_info "fcitx5 mint 主题已安装，跳过"
+elif [[ -f "$MINT_SRC/install.sh" ]]; then
+    if bash "$MINT_SRC/install.sh"; then
+        log_success "fcitx5 mint 主题安装完成"
+    else
+        record_failure "fcitx5 mint 主题" "install.sh 执行失败"
+    fi
 else
-    bash "$MINT_SRC/install.sh"
-    log_success "fcitx5 mint 主题安装完成"
+    record_failure "fcitx5 mint 主题" "未找到 $MINT_SRC/install.sh"
 fi
 
 log_success "fcitx5 完成"
+finish || exit 1

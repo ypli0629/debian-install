@@ -26,6 +26,7 @@ verify: schemas locales check-i18n
 
 link: schemas locales
 	mkdir -p $(dir $(EXT_DIR))
+	[ -L $(EXT_DIR) ] || rm -rf $(EXT_DIR)
 	ln -sfn $(CURDIR) $(EXT_DIR)
 	@echo "linked $(CURDIR) -> $(EXT_DIR)"
 
