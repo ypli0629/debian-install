@@ -28,10 +28,11 @@ check_sudo() {
         sudo apt-get update -qq || true   # 最小系统可能尚无 apt 索引
         sudo apt-get install -y "${_missing[@]}" -qq
     fi
-    # 保持 sudo 会话不过期（脱离终端，避免凭据过期时在后台尝试交互输入密码）
-    ( while true; do sudo -v; sleep 50; done ) </dev/null &>/dev/null &
+    # 保持 sudo 会话不过期；sudo -n 避免凭据过期时在后台尝试交互输入密码
+    ( set +e; while true; do sudo -n -v 2>/dev/null || break; sleep 50; done ) </dev/null &>/dev/null &
     SUDO_KEEP_ALIVE_PID=$!
-    trap 'kill "$SUDO_KEEP_ALIVE_PID" 2>/dev/null' EXIT INT TERM HUP
+    trap 'kill "$SUDO_KEEP_ALIVE_PID" 2>/dev/null' EXIT
+    trap 'kill "$SUDO_KEEP_ALIVE_PID" 2>/dev/null; exit 130' INT TERM HUP
 }
 
 # ── curl / wget 封装 ──────────────────────────────────────
@@ -51,13 +52,18 @@ gh_wget() {
 }
 
 # ── Git clone（已存在则跳过）──────────────────────────────
-# .git 可能是目录（普通 clone）或文件（worktree/submodule），故用 -e 判断。
+# .git 可能是目录（普通 clone）或文件（worktree/submodule），故用 -e 判断；
+# 命中后再用 git 校验有效性，避免损坏的 .git 被误判为“已安装”。
 git_clone_or_skip() {
     local repo="$1"
     local dest="$2"
     if [[ -e "$dest/.git" ]]; then
-        log_info "已存在，跳过：$dest"
-        return 0
+        if git -C "$dest" rev-parse --is-inside-work-tree &>/dev/null; then
+            log_info "已存在，跳过：$dest"
+            return 0
+        fi
+        log_error "目标目录 .git 无效，跳过克隆：$dest（请手动检查或删除后重试）"
+        return 1
     fi
     # 残留的半成品目录（非空且非 git 仓库）会导致 git clone 失败，明确报错而非静默卡死
     if [[ -d "$dest" && -n "$(ls -A "$dest" 2>/dev/null)" ]]; then

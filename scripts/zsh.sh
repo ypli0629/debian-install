@@ -12,25 +12,28 @@ if [[ -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]]; then
     log_info "oh-my-zsh 已安装，跳过"
     OMZ_READY=1
 else
-    # 先下载到临时文件，校验非空后再执行，避免下载失败时执行空脚本
-    OMZ_INSTALLER="$(mktemp)"
-    if [[ -n "$OMZ_INSTALLER" ]] \
-        && gh_wget "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" "$OMZ_INSTALLER" \
-        && [[ -s "$OMZ_INSTALLER" ]]; then
-        if sh "$OMZ_INSTALLER" "" --unattended </dev/null; then
-            if [[ -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]]; then
-                OMZ_READY=1
-                log_success "oh-my-zsh 安装完成"
+    # 先下载到临时文件，校验非空与语法后再执行，避免下载失败时执行空/损坏脚本
+    OMZ_INSTALLER=""
+    if ! OMZ_INSTALLER="$(mktemp)"; then
+        record_failure "oh-my-zsh" "创建临时文件失败"
+    else
+        if gh_wget "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" "$OMZ_INSTALLER" \
+            && [[ -s "$OMZ_INSTALLER" ]]; then
+            if ! sh -n "$OMZ_INSTALLER" 2>/dev/null; then
+                record_failure "oh-my-zsh" "下载脚本语法校验失败"
+            elif sh "$OMZ_INSTALLER" "" --unattended </dev/null; then
+                if [[ -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]]; then
+                    OMZ_READY=1
+                    log_success "oh-my-zsh 安装完成"
+                else
+                    record_failure "oh-my-zsh" "执行安装脚本后未找到 oh-my-zsh.sh"
+                fi
             else
-                record_failure "oh-my-zsh" "执行安装脚本后未找到 oh-my-zsh.sh"
+                record_failure "oh-my-zsh" "安装脚本执行失败"
             fi
         else
-            record_failure "oh-my-zsh" "安装脚本执行失败"
+            record_failure "oh-my-zsh" "下载安装脚本失败或文件为空"
         fi
-    else
-        record_failure "oh-my-zsh" "下载安装脚本失败或文件为空"
-    fi
-    if [[ -n "${OMZ_INSTALLER:-}" ]]; then
         rm -f "$OMZ_INSTALLER"
     fi
 fi
@@ -51,15 +54,18 @@ else
 fi
 
 log_section "zsh 插件"
+PLUGINS_OK=()
 git_clone_or_skip https://github.com/zsh-users/zsh-autosuggestions \
     "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" \
+    && PLUGINS_OK+=(zsh-autosuggestions) \
     || record_failure "zsh-autosuggestions" "克隆失败或目标目录非 git 仓库"
 git_clone_or_skip https://github.com/zsh-users/zsh-syntax-highlighting \
     "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting" \
+    && PLUGINS_OK+=(zsh-syntax-highlighting) \
     || record_failure "zsh-syntax-highlighting" "克隆失败或目标目录非 git 仓库"
 
-# 将插件加入 plugins=() 列表（幂等，兼容单行和多行写法）
-for plugin in zsh-autosuggestions zsh-syntax-highlighting; do
+# 仅对克隆成功的插件写入 plugins=()，避免启用不存在的插件导致 zsh 启动报错
+for plugin in "${PLUGINS_OK[@]}"; do
     # 用 grep -F 匹配完整插件名，避免子字符串误判
     if grep -qF "$plugin" ~/.zshrc 2>/dev/null; then
         log_info "插件已启用：$plugin，跳过"

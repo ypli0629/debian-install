@@ -8,10 +8,12 @@ THEMES_DIR="$HOME/.local/share/themes-src"
 mkdir -p "$THEMES_DIR"
 
 log_section "安装主题构建依赖"
+# WhiteSur 安装脚本自身也会补依赖；此处失败仅提示，不作为失败项（已安装主题时无需构建）
+sudo apt-get update -qq 2>/dev/null || true
 if sudo apt-get install -y sassc optipng; then
     log_success "主题构建依赖安装完成"
 else
-    record_failure "主题构建依赖" "sassc/optipng 安装失败"
+    log_info "主题构建依赖安装失败，若需构建主题请稍后手动安装 sassc optipng"
 fi
 
 log_section "WhiteSur GTK 主题"

@@ -71,8 +71,9 @@ else
     if curl -fsSL --retry 3 --retry-delay 2 "${PKG_PAGE_URL}CHECKSUMS" -o "${TMP_DIR}/CHECKSUMS" 2>/dev/null; then
         log_info "校验安装包完整性（SHA256）"
         for deb in "${DEB_FILES[@]}"; do
-            if ! (cd "$TMP_DIR" && grep -E "^[0-9a-f]{64}  ${deb}\$" CHECKSUMS | sha256sum -c -); then
-                log_error "安装包校验失败：$deb" fatal
+            # awk 按文件名精确匹配 SHA256 行，跳过 SHA1 段与注释，避免误判与转义问题
+            if ! (cd "$TMP_DIR" && awk -v f="$deb" 'length($1)==64 && $1 ~ /^[0-9a-f]+$/ && $2==f {print; hit=1} END{exit !hit}' CHECKSUMS | sha256sum -c -); then
+                log_error "安装包校验失败或校验条目缺失：$deb" fatal
             fi
         done
         log_success "所有安装包校验通过"
@@ -139,8 +140,24 @@ log_info "GRUB_DEFAULT → $GRUB_DEFAULT_VAL"
 # ── Secure Boot 防护 ──────────────────────────────────────
 # 检测到 Secure Boot 已启用时，不能把默认引导 pin 到未签名 mainline 内核，
 # 否则重启后可能无法引导；此时仅安装/锁定内核，跳过 GRUB_DEFAULT 与钩子。
+# 判定优先级：mokutil → efivars；传统 BIOS 视为未启用，UEFI 下无法判定时保守视为启用。
+_sb_enabled() {
+    [[ -d /sys/firmware/efi ]] || return 1
+    if command -v mokutil &>/dev/null; then
+        mokutil --sb-state 2>/dev/null | grep -qi enabled && return 0
+        return 1
+    fi
+    local efivar="/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c" _v=""
+    if [[ -e "$efivar" ]]; then
+        # 前 4 字节为属性，随后 1 字节为值：0x01 启用、0x00 关闭
+        _v="$(sudo od -An -t u1 -j 4 -N 1 "$efivar" 2>/dev/null | tr -d ' ')"
+    fi
+    [[ "$_v" == "1" ]] && return 0
+    [[ "$_v" == "0" ]] && return 1
+    return 0   # 无法判定：保守视为已启用
+}
 SECURE_BOOT_ENABLED=0
-if command -v mokutil &>/dev/null && mokutil --sb-state 2>/dev/null | grep -qi enabled; then
+if _sb_enabled; then
     SECURE_BOOT_ENABLED=1
 fi
 
@@ -191,8 +208,13 @@ HOOK
     sudo chmod +x /etc/kernel/postinst.d/zz-prefer-mainline-66-kernel
     log_success "已添加 /etc/kernel/postinst.d/zz-prefer-mainline-66-kernel"
 else
+    # 移除上一次非 SB 运行可能遗留的 postinst 钩子，避免它继续在 SB 下 pin 未签名内核
+    if [[ -f /etc/kernel/postinst.d/zz-prefer-mainline-66-kernel ]]; then
+        sudo rm -f /etc/kernel/postinst.d/zz-prefer-mainline-66-kernel
+        log_info "已移除遗留的 mainline 内核 postinst 钩子"
+    fi
     record_failure "Secure Boot" "检测到 Secure Boot 已启用，未将默认引导指向未签名内核；请对模块签名或关闭 Secure Boot 后重跑"
-    log_error "检测到 Secure Boot 已启用：已安装内核但未修改 GRUB_DEFAULT、未添加 postinst 钩子；请对模块签名或关闭 Secure Boot 后重跑"
+    log_error "检测到 Secure Boot 已启用：已安装内核但未修改 GRUB_DEFAULT、未添加 postinst 钩子；如曾运行过旧版本，请检查并还原 /etc/default/grub 的 GRUB_DEFAULT"
 fi
 
 if [[ "$SECURE_BOOT_ENABLED" -eq 0 ]]; then

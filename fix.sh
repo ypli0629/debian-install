@@ -31,7 +31,7 @@ else
 
     # 2. 写入 /etc/profile.d/（login shell 通用：终端、SSH）
     if [[ ! -f /etc/profile.d/linuxbrew.sh ]]; then
-        echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' \
+        printf 'eval "$(%s shellenv)"\n' "$BREW_BIN" \
             | sudo tee /etc/profile.d/linuxbrew.sh > /dev/null
         sudo chmod +x /etc/profile.d/linuxbrew.sh
         log_success "已写入 /etc/profile.d/linuxbrew.sh"
@@ -41,7 +41,7 @@ else
 
     # 3. 写入 ~/.zshrc（GNOME Terminal 默认是 non-login interactive shell）
     if ! grep -qF '# linuxbrew shellenv' ~/.zshrc 2>/dev/null; then
-        printf '\n# linuxbrew shellenv\neval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"\n' \
+        printf '\n# linuxbrew shellenv\neval "$(%s shellenv)"\n' "$BREW_BIN" \
             >> ~/.zshrc
         log_success "已写入 ~/.zshrc：brew shellenv"
     else

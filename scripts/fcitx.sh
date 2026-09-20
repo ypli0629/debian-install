@@ -28,10 +28,11 @@ git_clone_or_skip https://github.com/Mintimate/oh-my-rime "$HOME/.local/share/fc
 log_section "fcitx5 mint 主题"
 MINT_SRC="$HOME/.local/share/themes-src/fcitx5-theme-mint"
 mkdir -p "$HOME/.local/share/themes-src"
-git_clone_or_skip https://github.com/witt-bit/fcitx5-theme-mint.git "$MINT_SRC" \
-    || record_failure "fcitx5 mint 主题" "克隆失败或目标目录非 git 仓库"
+# 克隆失败则不进入安装分支，避免执行来源不可信的残留 install.sh 或重复记录失败
+if ! git_clone_or_skip https://github.com/witt-bit/fcitx5-theme-mint.git "$MINT_SRC"; then
+    record_failure "fcitx5 mint 主题" "克隆失败或目标目录非 git 仓库"
 # 检查主题是否已安装（安装到 ~/.local/share/fcitx5/themes/）
-if ls -d "$HOME/.local/share/fcitx5/themes/Mint"* &>/dev/null 2>&1; then
+elif ls -d "$HOME/.local/share/fcitx5/themes/Mint"* &>/dev/null 2>&1; then
     log_info "fcitx5 mint 主题已安装，跳过"
 elif [[ -f "$MINT_SRC/install.sh" ]]; then
     if bash "$MINT_SRC/install.sh"; then

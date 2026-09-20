@@ -26,8 +26,13 @@ packages=(
 )
 
 log_info "批量安装 ${#packages[@]} 个包..."
-# 与 install.sh 添加的 --user remote 保持一致，安装到用户级 flathub
-if flatpak install --user flathub -y --noninteractive "${packages[@]}"; then
+# 优先使用与 install.sh 一致的 --user flathub；仅有系统级 remote 时回退，保证单独运行也可用
+FLATPAK_SCOPE="--user"
+if ! flatpak remotes --user 2>/dev/null | awk '$1 == "flathub" { found=1 } END { exit !found }'; then
+    log_info "未检测到用户级 flathub，改用系统级 remote"
+    FLATPAK_SCOPE="--system"
+fi
+if flatpak install "$FLATPAK_SCOPE" flathub -y --noninteractive "${packages[@]}"; then
     log_success "Flatpak 安装完成"
 else
     record_failure "flatpak.sh" "部分包安装失败"

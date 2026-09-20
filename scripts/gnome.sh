@@ -31,7 +31,12 @@ CUSTOM_SCHEMA="org.gnome.settings-daemon.plugins.media-keys"
 CUSTOM_PREFIX="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/"
 
 # 读取现有自定义快捷键路径列表（gsettings 输出形如 ['...custom0/', ...] 或 []）
-_existing_raw="$(gsettings get "$CUSTOM_SCHEMA" custom-keybindings 2>/dev/null || true)"
+# 读取失败与“空列表”必须区分：失败时不能重建列表，否则会清空用户已有配置
+_existing_raw=""
+_read_ok=1
+if ! _existing_raw="$(gsettings get "$CUSTOM_SCHEMA" custom-keybindings 2>/dev/null)"; then
+    _read_ok=0
+fi
 _existing_paths=()
 while IFS= read -r _p; do
     [[ -n "$_p" ]] && _existing_paths+=("$_p")
@@ -68,6 +73,9 @@ _find_free_path() {
 
 log_section "GNOME 自定义快捷键"
 # 保留用户已有自定义快捷键：读取现有列表并合并 flameshot / gnome-terminal 后写回（幂等）
+if [[ $_read_ok -eq 0 ]]; then
+    record_failure "GNOME 自定义快捷键" "读取现有绑定失败，跳过以避免覆盖用户配置"
+else
 _selected_paths=()
 _selected_names=()
 _selected_cmds=()
@@ -80,7 +88,7 @@ for _spec in "flameshot|flameshot gui|<Alt>F1" \
     elif _path="$(_find_free_path)"; then
         _existing_paths+=("$_path")   # 标记已占用，避免后续目标重复选择同一索引
     else
-        log_error "无空闲 customN 索引，跳过：$_name"
+        record_failure "GNOME 自定义快捷键" "无空闲 customN 索引：$_name"
         continue
     fi
     _selected_paths+=("$_path")
@@ -117,5 +125,7 @@ for _i in "${!_selected_paths[@]}"; do
     gsettings set "${CUSTOM_SCHEMA}.custom-keybinding:${_p}" binding "${_selected_bindings[$_i]}"
 done
 unset _p
+fi
 
 log_success "GNOME 快捷键配置完成"
+finish || exit 1

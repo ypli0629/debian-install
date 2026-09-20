@@ -71,7 +71,9 @@ install_egon_extension() {
         return 1
     fi
 
-    tmp_dir="$(mktemp -d)" || { log_error "创建临时目录失败：$uuid"; rm -f "$tmp_zip"; return 1; }
+    # 在目标同级目录创建临时目录，保证 mv 是同文件系统 rename（原子），
+    # 避免 /tmp 与 $HOME 跨文件系统时 mv 退化为复制+删除而留下半成品
+    tmp_dir="$(mktemp -d "${EXT_DIR}/.${uuid}.XXXXXX")" || { log_error "创建临时目录失败：$uuid"; rm -f "$tmp_zip"; return 1; }
     if ! unzip -q -o "$tmp_zip" -d "$tmp_dir"; then
         log_error "解压失败：$uuid"
         rm -f "$tmp_zip"

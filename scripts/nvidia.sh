@@ -73,9 +73,11 @@ if [[ "$NEED_INSTALL" -eq 1 ]]; then
     log_info "安装完成后重新运行本脚本以配置 Wayland 支持"
 fi
 
-# 未安装驱动时跳过后续 Wayland 配置（保持原语义）
+# 未安装驱动时跳过后续 Wayland 配置；记录为待办，避免退出码 0 误报“已完成”
 if ! command -v nvidia-smi &>/dev/null || ! nvidia-smi &>/dev/null; then
-    exit 0
+    record_failure "NVIDIA 驱动" "需在 tty 手动执行 .run 安装后重跑本脚本以启用 Wayland"
+    finish || true
+    exit 1
 fi
 
 # ── 启用 Wayland 支持 ──────────────────────────────────

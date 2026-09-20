@@ -64,14 +64,11 @@ progress_tick
 
 # ── Flatpak 源 ────────────────────────────────────────────
 log_section "Flatpak 初始化"
-if [[ -z "$(flatpak remotes --user 2>/dev/null | awk '$1 == "flathub" { print $1 }')" ]]; then
-    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo --user \
-        || record_failure "Flatpak 源配置"
-    flatpak remote-modify flathub --url=https://mirrors.ustc.edu.cn/flathub --user \
-        || record_failure "Flatpak 源配置"
-else
-    log_info "flathub 源已存在，保留用户设置，跳过"
-fi
+# 统一 --user 作用域，并将 flathub 指向 USTC 镜像（两条命令均幂等）
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo --user \
+    || record_failure "Flatpak 源配置"
+flatpak remote-modify flathub --url=https://mirrors.ustc.edu.cn/flathub --user \
+    || record_failure "Flatpak 源配置"
 progress_tick
 
 # ── AstroNvim ────────────────────────────────────────────
@@ -165,16 +162,21 @@ else
     if [[ -n "$TOOLBOX_URL" ]]; then
         if wget --timeout=60 -q -O /tmp/jetbrains-toolbox.tar.gz "$TOOLBOX_URL"; then
             mkdir -p "$HOME/.local/bin"
-            tar -xzf /tmp/jetbrains-toolbox.tar.gz -C /tmp/
-            find /tmp -maxdepth 2 -name "jetbrains-toolbox" -type f \
-                | head -1 | xargs -I{} mv {} "$TOOLBOX_BIN"
-            chmod +x "$TOOLBOX_BIN" 2>/dev/null || true
-            rm -f /tmp/jetbrains-toolbox.tar.gz
-            if [[ -x "$TOOLBOX_BIN" ]]; then
+            # 解压到全新临时目录，避免命中 /tmp 下上次残留的旧二进制
+            _tb_tmp="$(mktemp -d)"
+            _tb_bin=""
+            if tar -xzf /tmp/jetbrains-toolbox.tar.gz -C "$_tb_tmp"; then
+                _tb_bin="$(find "$_tb_tmp" -maxdepth 2 -name "jetbrains-toolbox" -type f 2>/dev/null | head -1)"
+            fi
+            if [[ -n "$_tb_bin" ]]; then
+                mv "$_tb_bin" "$TOOLBOX_BIN"
+                chmod +x "$TOOLBOX_BIN"
                 log_success "JetBrains Toolbox 已安装至 $TOOLBOX_BIN，首次运行请在桌面环境执行"
             else
-                record_failure "JetBrains Toolbox" "解压/安装失败"
+                record_failure "JetBrains Toolbox" "解压/定位可执行文件失败"
             fi
+            rm -rf "$_tb_tmp"
+            rm -f /tmp/jetbrains-toolbox.tar.gz
         else
             record_failure "JetBrains Toolbox" "下载失败"
         fi
